@@ -149,6 +149,7 @@ var Synth, AudioSynth, AudioSynthInstrument;
 				data
 			];
 			var blob = new Blob(out, {type: 'audio/wav'});
+			return blob;
 			var dataURI = URL.createObjectURL(blob);
 			this._fileCache[sound][octave-1][note][time] = dataURI;
 			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to generate'); }
