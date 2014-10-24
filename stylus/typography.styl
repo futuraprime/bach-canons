@@ -11,7 +11,7 @@
 body {
   @extend .serif;
   font-size: 20px;
-  line-height: 28px;
+  line-height: 24px;
   color: #222;
 }
 
@@ -19,16 +19,50 @@ h1, h2, h3 {
   @extend .serif-display;
 }
 
+em {
+  font-style: italic;
+}
+
+fslh(value) {
+  font-size: value;
+  line-height: value;
+}
+
+optimizeText() {
+  text-rendering: optimizeLegibility;
+  text-rendering: geometricPrecision;
+}
+
 h1 {
   font-style: italic;
-  font-size: 60px;
-  line-height: 60px;
-  font-size: 8vw;
-  line-height: 8vw;
+  font-weight: 900;
+  fslh: 60px;
+  fslh: 8vw;
+
+  optimizeText();
 
   @media (max-width: 480px) {
-    font-size: 12vw;
-    line-height: 12vw;
+    fslh: 11vw;
+  }
+
+  @media (min-width: 960px) {
+    fslh: 78px;
+  }
+}
+
+h2 {
+  font-weight: 400;
+  fslh: 28px;
+  fslh: 4vw;
+
+  text-rendering: optimizeLegibility;
+
+  @media (max-width: 480px) {
+    fslh: 6vw;
+  }
+
+  @media(min-width: 960px) {
+    fslh: 40px;
   }
 }
 
@@ -37,10 +71,16 @@ h1 {
   line-height: 14vw;
 }
 
-.intro-text, .section-text {
-  margin: 10px;
-  min-width: 300px;
-  max-width: 500px;
+.intro-text, .section-text, p {
+  margin: 1em auto;
+  max-width: 35em;
+
+  &.left {
+    margin 1em auto 1em 0;
+  }
+  &.right {
+    margin: 1em 0 1em auto;
+  }
 }
 
 p + p,
