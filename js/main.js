@@ -26,13 +26,21 @@ function generateNote(note, octave, size) {
     note = note[0];
   }
   var blob = Synth.generate('piano', note, octave, size * wholeNote);
-  return blob;
-  // var source = context.createBufferSource();
-  // context.decodeAudioData(blob, function(buffer) {
-  //   source.buffer = buffer;
-  //   source.connect(context.destination);
-  // });
-  // return source;
+  var reader = new FileReader();
+  var buffer = null;
+  reader.addEventListener('loadend', function() {
+    context.decodeAudioData(reader.result, function(b) {
+      buffer = b;
+    });
+  });
+  reader.readAsArrayBuffer(blob);
+  return function() {
+    var source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+
+    source.start(0);
+  };
 }
 
 
