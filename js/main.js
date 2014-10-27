@@ -9,13 +9,47 @@ function ntf(steps) {
   return 440 * Math.pow(2, (steps/12));
 }
 
-function playFrequency(frequency, duration, offset) {
+// function makeDistortionCurve(amount) {
+//   var k = typeof amount === 'number' ? amount : 50,
+//     n_samples = 44100,
+//     curve = new Float32Array(n_samples),
+//     deg = Math.PI / 180,
+//     i = 0,
+//     x;
+//   for ( ; i < n_samples; ++i ) {
+//     // x = i * 2 / n_samples - 1;
+//     // curve[i] = 1;
+//     curve[i] = Math.pow(0.5*Math.log((k*2)/i),2);
+//     // curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+//   }
+//   return curve;
+// }
+
+
+function playFrequency(frequency, duration, offset, gain) {
   offset = offset || 0;
   var oscillator = context.createOscillator();
+  var compressor = context.createDynamicsCompressor();
+  var damper = context.createWaveShaper();
   var time = context.currentTime + offset;
 
+  gain = gain || context.createGain();
   oscillator.frequency.value = frequency;
-  oscillator.connect(context.destination);
+  compressor.attack.value = 0.002;
+  var n = 65536;
+  var curve = new Float32Array(n), i;
+  for (i=0; i<(n/2); i++)
+    curve[i] = 0.0;
+  for (i=(n/2); i<n; i++)
+      curve[i] = Math.pow(i/(n/2), 2) - 1;
+  damper.curve = curve;
+  // damper.curve = makeDistortionCurve(400);
+  // gain.gain.value = 0.7;
+
+  oscillator.connect(compressor);
+  compressor.connect(damper);
+  damper.connect(gain);
+  gain.connect(context.destination);
 
   oscillator.noteOn(time);
   oscillator.noteOff(time + duration);
@@ -89,8 +123,9 @@ function canon(loop, repetitions, delay) {
 
 var play = document.getElementById('play');
 play.addEventListener('click', function() {
-  canon(inG, 2);
-  canon(inC, 2, 0.5);
-  canon(inA, 2, 1);
-  canon(inD, 2, 1.5);
+  var n = 1;
+  canon(inG, 1, 0  );
+  canon(inC, 1, 0.5);
+  canon(inA, 1, 1  );
+  canon(inD, 1, 1.5);
 });
