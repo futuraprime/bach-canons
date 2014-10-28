@@ -150,3 +150,18 @@ var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
   BWV1074_Canon_1.play(1);
 });
+
+// visual bits
+var interactive = d3.select('#interactive')
+  .attr('height', 400)
+  .attr('width', 600);
+
+// these domains are total guesses...
+var xScale = d3.scale.linear()
+  .domain([0, 20])
+  .range([20, 580]);
+
+var yScale = d3.scale.log()
+  .base(2)
+  .domain([10,10000])
+  .range([380, 20]);
