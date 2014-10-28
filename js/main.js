@@ -90,6 +90,11 @@ Canon.prototype.play = function(repetitions) {
     this.voices[k].play(time, repetitions);
   }
 };
+Canon.prototype.adjustGain = function(gainValue) {
+  for(var k in this.voices) {
+    this.voices[k].adjustGain(gainValue);
+  }
+};
 
 // the "voice" is the core component of the canon: canons
 // are composed of several voices.
@@ -100,7 +105,7 @@ function Voice(canon, delay, transform) {
   this.loop = canon.loop;
   this.setTransform(transform);
   this.delay = delay === undefined ? 0 : delay * wholeNote;
-  this.gain = null;
+  this.gain = context.createGain();
 }
 Voice.prototype.setTransform = function(transform) {
   // not sure we need this caching, but just in case we do...
@@ -114,15 +119,17 @@ Voice.prototype.setTransform = function(transform) {
 Voice.prototype.play = function(startTime, repetitions) {
   repetitions = repetitions === undefined ? 1 : repetitions;
   var time = startTime + this.delay;
-  console.log(startTime, time);
   var cursor = 0;
   var loop = this._loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i][0], loop[i][1] * wholeNote, time, cursor);
+      playFrequency(loop[i][0], loop[i][1] * wholeNote, time, cursor, this.gain);
       cursor += loop[i][1] * wholeNote;
     }
   }
+};
+Voice.prototype.adjustGain = function(gainValue) {
+  this.gain.gain.value = gainValue;
 };
 
 // this *returns* a transform function
@@ -136,10 +143,12 @@ function shiftPitch(steps) {
 }
 
 var BWV1074_Canon_1 = new Canon(BWV1074);
-BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(-4));
+BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(7));
 BWV1074_Canon_1.addVoice('C', 0.5);
 BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(3));
 BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
+
+BWV1074_Canon_1.adjustGain(0.2);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
