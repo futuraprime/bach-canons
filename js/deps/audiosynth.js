@@ -91,12 +91,20 @@ var Synth, AudioSynth, AudioSynthInstrument;
 		octave |= 0;
 		octave = Math.min(8, Math.max(1, octave));
 		var time = !duration?2:parseFloat(duration);
-		if(typeof(this._notes[note])=='undefined') { throw new Error(note + ' is not a valid note.'); }
-		if(typeof(this._fileCache[sound][octave-1][note][time])!='undefined') {
-			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to retrieve (cached)'); }
-			return this._fileCache[sound][octave-1][note][time];
+		var frequency = null;
+		if(typeof(note)=='number') {
+			// assume a frequency
+			frequency = note;
+			duration = octave;
+		} else if(typeof(this._notes[note])=='undefined') {
+			throw new Error(note + ' is not a valid note.');
 		} else {
-			var frequency = this._notes[note] * Math.pow(2,octave-4);
+			frequency = frequency || this._notes[note] * Math.pow(2,octave-4);
+		}
+		if(typeof(this._fileCache[sound][frequency][time])!='undefined') {
+			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to retrieve (cached)'); }
+			return this._fileCache[sound][frequency][time];
+		} else {
 			var sampleRate = this._sampleRate;
 			var volume = this._volume;
 			var channels = this._channels;
@@ -151,7 +159,7 @@ var Synth, AudioSynth, AudioSynthInstrument;
 			var blob = new Blob(out, {type: 'audio/wav'});
 			return blob;
 			var dataURI = URL.createObjectURL(blob);
-			this._fileCache[sound][octave-1][note][time] = dataURI;
+			this._fileCache[sound][frequency][time] = dataURI;
 			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to generate'); }
 			return dataURI;
 		}
