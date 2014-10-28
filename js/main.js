@@ -96,6 +96,13 @@ Canon.prototype.adjustGain = function(gainValue) {
     this.voices[k].adjustGain(gainValue);
   }
 };
+Canon.prototype.getData = function() {
+  var voices = {};
+  for(var k in this.voices) {
+    voices[k] = this.voices[k].getData();
+  }
+  return voices;
+};
 
 // the "voice" is the core component of the canon: canons
 // are composed of several voices.
@@ -104,7 +111,7 @@ Canon.prototype.adjustGain = function(gainValue) {
 // come in
 function Voice(canon, delay, transform) {
   this._loop = canon.loop;
-  this.delay = delay === undefined ? 0 : delay * wholeNote;
+  this.delay = delay === undefined ? 0 : delay;
   this.setTransform(transform);
   this.gain = context.createGain();
 }
@@ -119,7 +126,7 @@ Voice.prototype.setTransform = function(transform) {
 };
 Voice.prototype.play = function(startTime, repetitions) {
   repetitions = repetitions === undefined ? 1 : repetitions;
-  var time = startTime + this.delay;
+  var time = startTime + this.delay * wholeNote;
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
@@ -129,6 +136,14 @@ Voice.prototype.play = function(startTime, repetitions) {
 };
 Voice.prototype.adjustGain = function(gainValue) {
   this.gain.gain.value = gainValue;
+};
+Voice.prototype.getData = function() {
+  // this will eventually (probably) take a range and
+  // output something more complicated than the loop
+  var delay = this.delay;
+  return this.loop.map(function (note) {
+    return [note[0], note[1], note[2] + delay];
+  });
 };
 
 // this *returns* a transform function
