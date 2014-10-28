@@ -2,7 +2,7 @@
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
-var wholeNote = 0.75;
+var wholeNote = 1;
 
 // steps is steps from A4
 function ntf(steps) {
@@ -70,7 +70,7 @@ function playFrequency(frequency, duration, start, offset, gain) {
   gain.connect(context.destination);
 
   oscillator.noteOn(time);
-  oscillator.noteOff(time + duration * wholeNote);
+  oscillator.noteOff(time + duration);
 }
 
 
@@ -119,8 +119,8 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this._loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i][0], loop[i][1], time, cursor + this.delay);
-      cursor += loop[i][1];
+      playFrequency(loop[i][0], loop[i][1] * wholeNote, time, cursor);
+      cursor += loop[i][1] * wholeNote;
     }
   }
 };
@@ -138,8 +138,8 @@ function shiftPitch(steps) {
 var BWV1074_Canon_1 = new Canon(BWV1074);
 BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(-4));
 BWV1074_Canon_1.addVoice('C', 0.5);
-// BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(3));
-// BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
+BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(3));
+BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
