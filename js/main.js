@@ -192,7 +192,9 @@ var yScale = d3.scale.log()
   .range([380, 20]);
 
 var notes = interactive.selectAll('.note')
-  .data(BWV1074_Canon_1.getData());
+  .data(BWV1074_Canon_1.getData().sort(function(a, b) {
+    return a[1] <= b[1]; // duration
+  }));
 
 var colors = {
   'G' : '#2368A0',
