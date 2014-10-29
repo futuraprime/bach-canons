@@ -97,10 +97,20 @@ Canon.prototype.adjustGain = function(gainValue) {
   }
 };
 Canon.prototype.getData = function() {
+  var self = this;
   var voices = [], ret = [];
-  function addKey(n) { return n.concat(k); }
-  for(var k in this.voices) {
-    voices.push(this.voices[k].getData().map(addKey));
+  var note, k;
+  // addVoice is leaning on a bit of intentional scope leakage here
+  // to know what 'k' is
+  function addVoice(n) {
+    n.voice = self.voices[k];
+    console.log(n.voice);
+    return n.concat(k, self.voices[k]);
+  }
+  for(k in this.voices) {
+    voice = this.voices[k].getData().map(addVoice);
+    console.log(voice[0].voice);
+    voices.push(voice);
   }
   return ret.concat.apply(ret,voices);
 };
@@ -201,4 +211,6 @@ notes.enter()
   .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
   .attr('fill', function(d) {
     return colors[d[3]];
-  });
+  })
+  .on('mouseenter', function(d) { console.log(d[4]); });
+
