@@ -179,7 +179,7 @@ var xScale = d3.scale.linear()
 
 var yScale = d3.scale.log()
   .base(2)
-  .domain([50,2000])
+  .domain([-25, 5].map(ntf))
   .range([380, 20]);
 
 var notes = interactive.selectAll('.note')
