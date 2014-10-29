@@ -97,11 +97,12 @@ Canon.prototype.adjustGain = function(gainValue) {
   }
 };
 Canon.prototype.getData = function() {
-  var voices = {};
+  var voices = [], ret = [];
+  function addKey(n) { return n.concat(k); }
   for(var k in this.voices) {
-    voices[k] = this.voices[k].getData();
+    voices.push(this.voices[k].getData().map(addKey));
   }
-  return voices;
+  return ret.concat.apply(ret,voices);
 };
 
 // the "voice" is the core component of the canon: canons
@@ -180,3 +181,10 @@ var yScale = d3.scale.log()
   .base(2)
   .domain([10,10000])
   .range([380, 20]);
+
+var notes = interactive.selectAll('.note')
+  .data(BWV1074_Canon_1.getData());
+
+notes.enter()
+  .append('svg:rect')
+  .attr('class', 'note');
