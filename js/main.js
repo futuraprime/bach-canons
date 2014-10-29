@@ -103,13 +103,12 @@ Canon.prototype.getData = function() {
   // addVoice is leaning on a bit of intentional scope leakage here
   // to know what 'k' is
   function addVoice(n) {
-    n.voice = self.voices[k];
-    console.log(n.voice);
-    return n.concat(k, self.voices[k]);
+    var ret = n.concat(k, self.voices[k]);
+    ret.voice = self.voices[k];
+    return ret;
   }
   for(k in this.voices) {
     voice = this.voices[k].getData().map(addVoice);
-    console.log(voice[0].voice);
     voices.push(voice);
   }
   return ret.concat.apply(ret,voices);
@@ -212,5 +211,11 @@ notes.enter()
   .attr('fill', function(d) {
     return colors[d[3]];
   })
-  .on('mouseenter', function(d) { console.log(d[4]); });
+  .on('mouseenter', function(d) {
+    BWV1074_Canon_1.adjustGain(0.2);
+    d.voice.adjustGain(1);
+  })
+  .on('mouseleave', function(d) {
+    BWV1074_Canon_1.adjustGain(0.5);
+  });
 
