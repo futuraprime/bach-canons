@@ -174,7 +174,7 @@ var interactive = d3.select('#interactive')
 
 // these domains are total guesses...
 var xScale = d3.scale.linear()
-  .domain([0, 10])
+  .domain([0, 7])
   .range([20, 580]);
 
 var yScale = d3.scale.log()
@@ -198,7 +198,7 @@ notes.enter()
   .attr('x', function(d) { return xScale(d[2]); })
   .attr('y', function(d) { return yScale(d[0]); })
   .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
-  .attr('width', function(d) { return xScale(d[1]); })
+  .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
   .attr('fill', function(d) {
     return colors[d[3]];
   });
