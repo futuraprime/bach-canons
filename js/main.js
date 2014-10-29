@@ -174,7 +174,7 @@ var interactive = d3.select('#interactive')
 
 // these domains are total guesses...
 var xScale = d3.scale.linear()
-  .domain([0, 20])
+  .domain([0, 10])
   .range([20, 580]);
 
 var yScale = d3.scale.log()
@@ -185,6 +185,20 @@ var yScale = d3.scale.log()
 var notes = interactive.selectAll('.note')
   .data(BWV1074_Canon_1.getData());
 
+var colors = {
+  'G' : '#337331',
+  'C' : '#B13631',
+  'D' : '#8A6318',
+  'A' : '#2368A0'
+}
+
 notes.enter()
   .append('svg:rect')
-  .attr('class', 'note');
+  .attr('class', 'note')
+  .attr('x', function(d) { return xScale(d[2]); })
+  .attr('y', function(d) { return yScale(d[0]); })
+  .attr('height', 10)
+  .attr('width', function(d) { return xScale(d[1]); })
+  .attr('fill', function(d) {
+    return colors[d[3]];
+  });
