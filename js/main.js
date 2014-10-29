@@ -157,7 +157,7 @@ function shiftPitch(steps) {
 var BWV1074_Canon_1 = new Canon(BWV1074);
 BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(7));
 BWV1074_Canon_1.addVoice('C', 0.5);
-BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(3));
+BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(-3));
 BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
 
 BWV1074_Canon_1.adjustGain(0.2);
@@ -186,18 +186,18 @@ var notes = interactive.selectAll('.note')
   .data(BWV1074_Canon_1.getData());
 
 var colors = {
-  'G' : '#337331',
+  'G' : '#2368A0',
   'C' : '#B13631',
-  'D' : '#8A6318',
-  'A' : '#2368A0'
-}
+  'A' : '#8A6318',
+  'D' : '#337331'
+};
 
 notes.enter()
   .append('svg:rect')
   .attr('class', 'note')
   .attr('x', function(d) { return xScale(d[2]); })
   .attr('y', function(d) { return yScale(d[0]); })
-  .attr('height', 10)
+  .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
   .attr('width', function(d) { return xScale(d[1]); })
   .attr('fill', function(d) {
     return colors[d[3]];
