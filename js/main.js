@@ -135,6 +135,7 @@ Voice.prototype.setTransform = function(transform) {
   }
 };
 Voice.prototype.play = function(startTime, repetitions) {
+  this.startTime = startTime;
   repetitions = repetitions === undefined ? 1 : repetitions;
   var time = startTime + this.delay * wholeNote;
   var loop = this.loop;    // note: this is the TRANSFORMED loop
@@ -214,10 +215,14 @@ notes.enter()
     return colors[d[3]];
   })
   .on('mouseenter', function(d) {
-    BWV1074_Canon_1.adjustGain(0.2);
+    BWV1074_Canon_1.adjustGain(0.5);
     d.voice.adjustGain(1);
+    notes.attr('opacity', function(dPrime) {
+      return dPrime[3] === d[3] ? 1 : 0.25;
+    });
   })
   .on('mouseleave', function(d) {
     BWV1074_Canon_1.adjustGain(0.5);
+    notes.attr('opacity', 1);
   });
 
