@@ -2,6 +2,8 @@
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
+var Synth = new AudioSynth();
+
 var wholeNote = 1;
 
 // steps is steps from A4
