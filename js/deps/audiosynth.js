@@ -88,20 +88,22 @@ var Synth, AudioSynth, AudioSynthInstrument;
 		if(!thisSound) { throw new Error('Invalid sound or sound ID: ' + sound); }
 		var t = (new Date).valueOf();
 		this._temp = {};
-		octave |= 0;
-		octave = Math.min(8, Math.max(1, octave));
-		var time = !duration?2:parseFloat(duration);
 		var frequency = null;
-		if(typeof(note)=='number') {
+
+		if(typeof(note) == 'number') {
 			// assume a frequency
 			frequency = note;
 			duration = octave;
 		} else if(typeof(this._notes[note])=='undefined') {
 			throw new Error(note + ' is not a valid note.');
 		} else {
+			octave |= 0;
+			octave = Math.min(8, Math.max(1, octave));
 			frequency = frequency || this._notes[note] * Math.pow(2,octave-4);
 		}
-		if(typeof(this._fileCache[sound][frequency][time])!='undefined') {
+		var time = !duration?2:parseFloat(duration);
+		if(this._fileCache[sound] && this._fileCache[sound][frequency] &&
+			typeof(this._fileCache[sound][frequency][time])!='undefined') {
 			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to retrieve (cached)'); }
 			return this._fileCache[sound][frequency][time];
 		} else {
@@ -159,6 +161,9 @@ var Synth, AudioSynth, AudioSynthInstrument;
 			var blob = new Blob(out, {type: 'audio/wav'});
 			return blob;
 			var dataURI = URL.createObjectURL(blob);
+			if(this._fileCache[sound][frequency] === undefined) {
+				this._fileCache[sound][frequency] = [];
+			}
 			this._fileCache[sound][frequency][time] = dataURI;
 			if(this._debug) { console.log((new Date).valueOf() - t, 'ms to generate'); }
 			return dataURI;

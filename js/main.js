@@ -48,14 +48,43 @@ var BWV1074 = ([
 ]).map(parseNote);
 
 
+function generateNote(frequency, duration, position) {
+  if(frequency instanceof Array) {
+    position = frequency[2];
+    duration = frequency[1];
+    frequency = frequency[0];
+  }
+  duration = duration * wholeNote;
+  var blob = Synth.generate('piano', frequency, duration);
+  var reader = new FileReader(), buffer;
+
+  reader.addEventListener('loadend', function() {
+    context.decodeAudioData(reader.result, function(b) {
+      buffer = b;
+    });
+  });
+  reader.readAsArrayBuffer(blob);
+
+  var fn = function() {
+    var source = context.createBufferSource();
+    source.buffer = buffer;
+
+    return source;
+  };
+  fn.duration = duration;
+
+  return [fn, position];
+}
+
+
 // this is (currently) our musical instrument
 function playFrequency(frequency, duration, position, gain) {
   position = position || 0;
   var oscillator = context.createOscillator();
   var compressor = context.createDynamicsCompressor();
   var damper = context.createWaveShaper();
-
   gain = gain || context.createGain();
+
   oscillator.frequency.value = frequency;
   compressor.attack.value = 0.002;
   var n = 65536;
@@ -71,9 +100,21 @@ function playFrequency(frequency, duration, position, gain) {
   damper.connect(gain);
   gain.connect(context.destination);
 
-
   oscillator.noteOn(position);
   oscillator.noteOff(position + duration);
+}
+
+function playFrequencyFromSynth(note, position, gain) {
+  position = position || 0;
+  gain = gain || context.createGain();
+  gain.connect(context.destination);
+
+  var source = note();
+  source.connect(gain);
+
+  console.log('starting note at', position);
+
+  source.start(position);
 }
 
 
@@ -127,6 +168,9 @@ function Voice(canon, delay, transform) {
   this.setTransform(transform);
   this.gain = context.createGain();
 }
+Voice.prototype._generateNotes = function() {
+  this.notes = this.loop.map(generateNote);
+};
 Voice.prototype.setTransform = function(transform) {
   // not sure we need this caching, but just in case we do...
   this._transform = transform;
@@ -135,15 +179,17 @@ Voice.prototype.setTransform = function(transform) {
   } else {
     this.loop = this._loop.slice(); // clone array
   }
+  this._generateNotes();
 };
 Voice.prototype.play = function(startTime, repetitions) {
   this.startTime = startTime;
   repetitions = repetitions === undefined ? 1 : repetitions;
   var time = startTime + this.delay * wholeNote;
-  var loop = this.loop;    // note: this is the TRANSFORMED loop
+  var loop = this.notes;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i][0], loop[i][1] * wholeNote, loop[i][2] * wholeNote + time, this.gain);
+      // playFrequency(loop[i][0], loop[i][1] * wholeNote, loop[i][2] * wholeNote + time, this.gain);
+      playFrequencyFromSynth(loop[i][0], loop[i][1] * wholeNote + time, this.gain);
     }
   }
 };
@@ -176,7 +222,7 @@ BWV1074_Canon_1.adjustGain(0.2);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
-  BWV1074_Canon_1.play(1);
+  BWV1074_Canon_1.play(2);
 });
 
 // visual bits
