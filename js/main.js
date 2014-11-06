@@ -85,6 +85,9 @@ Canon.prototype.addVoice = function(name, transform, delay) {
   this.voices[name] = newVoice;
   return newVoice;
 };
+Canon.prototype.removeVoice = function(name) {
+  delete this.voices[name];
+}
 Canon.prototype.play = function(repetitions) {
   var time = context.currentTime + 0.1;
   for(var k in this.voices) {
@@ -129,16 +132,19 @@ function Voice(canon, delay, transform) {
 // needs to be played in a 'single' loop. This can be less than one, which
 // could cause problems
 Voice.prototype.setTransform = function(transform, repetitionFactor) {
-  // not sure we need this caching, but just in case we do...
-  this._transform = transform;
+  if(transform) { this._transform = transform; }
   if(transform instanceof Function) {
     this.loop = this._loop.map(transform);
   } else {
     this.loop = this._loop.slice(); // clone array
   }
   var l = this.loop.length - 1;
-  this.repetitionFactor = repetitionFactor || 1;
+  this.repetitionFactor = repetitionFactor || this.repetitionFactor || 1;
   this.duration = this.loop[l][1] + this.loop[l][2]; // the end of the last note
+};
+Voice.prototype.setDelay = function(delay) {
+  this.delay = delay === undefined ? 0 : delay;
+  this.setTransform();
 };
 Voice.prototype.play = function(startTime, repetitions) {
   this.startTime = startTime;
@@ -169,6 +175,17 @@ function shiftPitch(steps) {
     return [ note[0] * Math.pow(2, (steps/12)) ].concat(note.slice(1));
   };
 }
+
+var stateMachine = new machina.Fsm({
+  states : {
+    "walther" : {
+    },
+    "marpurg" : {
+
+    }
+  }
+});
+
 
 var BWV1074_Canon_1 = new Canon(BWV1074);
 BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(7));
