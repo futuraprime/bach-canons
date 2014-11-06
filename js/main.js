@@ -133,6 +133,8 @@ Voice.prototype.setTransform = function(transform) {
   } else {
     this.loop = this._loop.slice(); // clone array
   }
+  var l = this.loop.length - 1;
+  this.duration = this.loop[l][1] + this.loop[l][2]; // the end of the last note
 };
 Voice.prototype.play = function(startTime, repetitions) {
   this.startTime = startTime;
@@ -141,7 +143,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i][0], loop[i][1] * wholeNote, loop[i][2] * wholeNote + time, this.gain);
+      playFrequency(loop[i][0], loop[i][1] * wholeNote, (loop[i][2] + j * this.duration) * wholeNote + time, this.gain);
     }
   }
 };
@@ -174,7 +176,7 @@ BWV1074_Canon_1.adjustGain(0.2);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
-  BWV1074_Canon_1.play(1);
+  BWV1074_Canon_1.play(4);
 });
 
 // visual bits
