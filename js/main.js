@@ -55,11 +55,11 @@ function playFrequency(frequency, duration, position, gain) {
 
   gain = gain || context.createGain();
   oscillator.frequency.value = frequency;
-  compressor.attack.value = 0.002;
+  compressor.attack.value = 0.01;
   var n = 65536;
   var curve = new Float32Array(n), i;
   for (i=0; i<(n/2); i++)
-    curve[i] = 0.0;
+    curve[i] = 0.05;
   for (i=(n/2); i<n; i++)
       curve[i] = Math.pow(i/(n/2), 2) - 1;
   damper.curve = curve;
@@ -125,7 +125,10 @@ function Voice(canon, delay, transform) {
   this.setTransform(transform);
   this.gain = context.createGain();
 }
-Voice.prototype.setTransform = function(transform) {
+// the repetition factor determines how many times the transformed loop
+// needs to be played in a 'single' loop. This can be less than one, which
+// could cause problems
+Voice.prototype.setTransform = function(transform, repetitionFactor) {
   // not sure we need this caching, but just in case we do...
   this._transform = transform;
   if(transform instanceof Function) {
@@ -134,6 +137,7 @@ Voice.prototype.setTransform = function(transform) {
     this.loop = this._loop.slice(); // clone array
   }
   var l = this.loop.length - 1;
+  this.repetitionFactor = repetitionFactor || 1;
   this.duration = this.loop[l][1] + this.loop[l][2]; // the end of the last note
 };
 Voice.prototype.play = function(startTime, repetitions) {
@@ -141,7 +145,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   repetitions = repetitions === undefined ? 1 : repetitions;
   var time = startTime + this.delay * wholeNote;
   var loop = this.loop;    // note: this is the TRANSFORMED loop
-  for(var j=0;j<repetitions;++j) {
+  for(var j=0;j<repetitions * this.repetitionFactor;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
       playFrequency(loop[i][0], loop[i][1] * wholeNote, (loop[i][2] + j * this.duration) * wholeNote + time, this.gain);
     }
@@ -172,7 +176,7 @@ BWV1074_Canon_1.addVoice('C', 0.5);
 BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(-3));
 BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
 
-BWV1074_Canon_1.adjustGain(0.2);
+BWV1074_Canon_1.adjustGain(0.3);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
@@ -217,14 +221,14 @@ notes.enter()
     return colors[d[3]];
   })
   .on('mouseenter', function(d) {
-    BWV1074_Canon_1.adjustGain(0.5);
-    d.voice.adjustGain(1);
+    BWV1074_Canon_1.adjustGain(0.1);
+    d.voice.adjustGain(0.4);
     notes.attr('opacity', function(dPrime) {
       return dPrime[3] === d[3] ? 1 : 0.25;
     });
   })
   .on('mouseleave', function(d) {
-    BWV1074_Canon_1.adjustGain(0.5);
+    BWV1074_Canon_1.adjustGain(0.3);
     notes.attr('opacity', 1);
   });
 
