@@ -163,7 +163,7 @@ Voice.prototype.adjustGain = function(gainValue) {
 Voice.prototype.getData = function() {
   // this will eventually (probably) take a range and
   // output something more complicated than the loop
-  var delay = this.delay;
+  var delay = this.delay || 0;
   return this.loop.map(function (note) {
     return [note[0], note[1], note[2] + delay];
   });
