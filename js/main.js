@@ -2,7 +2,7 @@
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
-var wholeNote = 1;
+var wholeNote = 1.5;
 
 // steps is steps from A4
 function ntf(steps) {
