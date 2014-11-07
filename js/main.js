@@ -70,8 +70,8 @@ function playFrequency(frequency, duration, position, gain) {
   gain.connect(context.destination);
 
 
-  oscillator.noteOn(position);
-  oscillator.noteOff(position + duration);
+  oscillator.start(position);
+  oscillator.stop(position + duration);
 }
 
 
@@ -180,7 +180,7 @@ BWV1074_Canon_1.adjustGain(0.3);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
-  BWV1074_Canon_1.play(4);
+  BWV1074_Canon_1.play(1);
 });
 
 // visual bits
