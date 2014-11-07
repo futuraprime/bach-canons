@@ -107,6 +107,10 @@ Theme.prototype.addCanon = function(name, canonArray) {
     }
   }
 };
+Theme.prototype.setCurrentCanon = function(name) {
+  if(!this.canons[name]) { throw 'Canon ' + name + ' does not exist.'; }
+  this.currentCanon = this.canons[name];
+};
 
 function Canon(loop) {
   if(loop instanceof Theme) {
