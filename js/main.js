@@ -22,16 +22,32 @@ var A  = ntf( 0);
 var As = ntf( 1);
 var B  = ntf( 2);
 
-function parseNote(note, octave, duration, position) {
+// this can actually take inputs in three ways...
+// it can take note, octave, duration, position
+// or it can take frequency, duration, position
+// or it can take an array of the form:
+//            [note, octave, duration, position]
+function Note(note, octave, duration, position) {
   if(note instanceof Array) {
     position = note[3];
     duration = note[2];
     octave = note[1];
     note = note[0];
   }
-  var frequency = note * Math.pow(2, octave - 4);
-  return [frequency, duration, position];
+  if(arguments.length === 3) {
+    this.frequency = note;
+    position = duration;
+    duration = octave;
+  } else {
+    this.frequency = note * Math.pow(2, octave - 4);
+  }
+  this.duration = duration;
+  this.position = position;
 }
+Note.prototype.getData = function(delay) {
+  delay |= 0;
+  return [this.frequency, this.duration, this.position + delay];
+};
 
 var BWV1074 = ([
   [C, 4, 0.5 , 0.0 ],
@@ -43,11 +59,12 @@ var BWV1074 = ([
   [B, 3, 0.75, 4.0 ],
   [A, 3, 0.25, 4.75],
   [B, 3, 0.25, 5.0 ]
-]).map(parseNote);
+]).map(function(note) { return new Note(note); } );
 
 
 // this is (currently) our musical instrument
 function playFrequency(frequency, duration, position, gain) {
+  // console.log('playing frequency', frequency, duration, position);
   position = position || 0;
   var oscillator = context.createOscillator();
   var compressor = context.createDynamicsCompressor();
@@ -69,7 +86,6 @@ function playFrequency(frequency, duration, position, gain) {
   damper.connect(gain);
   gain.connect(context.destination);
 
-
   oscillator.start(position);
   oscillator.stop(position + duration);
 }
@@ -87,7 +103,7 @@ Canon.prototype.addVoice = function(name, transform, delay) {
 };
 Canon.prototype.removeVoice = function(name) {
   delete this.voices[name];
-}
+};
 Canon.prototype.play = function(repetitions) {
   var time = context.currentTime + 0.1;
   for(var k in this.voices) {
@@ -140,7 +156,7 @@ Voice.prototype.setTransform = function(transform, repetitionFactor) {
   }
   var l = this.loop.length - 1;
   this.repetitionFactor = repetitionFactor || this.repetitionFactor || 1;
-  this.duration = this.loop[l][1] + this.loop[l][2]; // the end of the last note
+  this.duration = this.loop[l].duration + this.loop[l].position; // the end of the last note
 };
 Voice.prototype.setDelay = function(delay) {
   this.delay = delay === undefined ? 0 : delay;
@@ -153,7 +169,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions * this.repetitionFactor;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i][0], loop[i][1] * wholeNote, (loop[i][2] + j * this.duration) * wholeNote + time, this.gain);
+      playFrequency(loop[i].frequency, loop[i].duration * wholeNote, (loop[i].position + j * this.duration) * wholeNote + time, this.gain);
     }
   }
 };
@@ -164,15 +180,14 @@ Voice.prototype.getData = function() {
   // this will eventually (probably) take a range and
   // output something more complicated than the loop
   var delay = this.delay || 0;
-  return this.loop.map(function (note) {
-    return [note[0], note[1], note[2] + delay];
-  });
+  return this.loop.map(function (note) { return note.getData(delay); });
 };
 
 // this *returns* a transform function
 function shiftPitch(steps) {
   return function(note) {
-    return [ note[0] * Math.pow(2, (steps/12)) ].concat(note.slice(1));
+    // return [ note[0] * Math.pow(2, (steps/12)) ].concat(note.slice(1));
+    return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
   };
 }
 
