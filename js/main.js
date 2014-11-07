@@ -49,7 +49,7 @@ Note.prototype.getData = function(delay) {
   return [this.frequency, this.duration, this.position + delay];
 };
 
-var BWV1074 = ([
+var BWV1074_notes = ([
   [C, 4, 0.5 , 0.0 ],
   [F, 4, 1   , 0.5 ],
   [D, 4, 0.5 , 1.5 ],
@@ -59,8 +59,9 @@ var BWV1074 = ([
   [B, 3, 0.75, 4.0 ],
   [A, 3, 0.25, 4.75],
   [B, 3, 0.25, 5.0 ]
-]).map(function(note) { return new Note(note); } );
+]); //.map(function(note) { return new Note(note); } );
 
+var BWV1074 = new Theme(BWV1074_notes);
 
 // this is (currently) our musical instrument
 function playFrequency(frequency, duration, position, gain) {
@@ -91,9 +92,28 @@ function playFrequency(frequency, duration, position, gain) {
 }
 
 
+function Theme(noteArray) {
+  this.loop = noteArray.map(function(note) {
+    return new Note(note);
+  });
+  this.canons = {};
+}
+Theme.prototype.addCanon = function(name, canonArray) {
+  var i, j;
+  for(i=0,l=canonArray.length;i<l;++i) {
+    this.canons[name] = new Canon(this.loop);
+    for(j=0,ln=canonArray[i].length;j<ln;++j) {
+      this.canons[name].addVoice.apply(this.canons[name], canonArray[i][j]);
+    }
+  }
+};
 
 function Canon(loop) {
-  this.loop = loop;
+  if(loop instanceof Theme) {
+    this.loop = loop.loop;
+  } else {
+    this.loop = loop;
+  }
   this.voices = {};
 }
 Canon.prototype.addVoice = function(name, transform, delay) {
@@ -212,7 +232,7 @@ BWV1074_Canon_1.adjustGain(0.3);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
-  BWV1074_Canon_1.play(1);
+  BWV1074_Canon_1.play(2);
 });
 
 // visual bits
