@@ -100,16 +100,17 @@ function Theme(noteArray) {
 }
 Theme.prototype.addCanon = function(name, canonArray) {
   var i, j;
+  this.canons[name] = new Canon(this.loop);
   for(i=0,l=canonArray.length;i<l;++i) {
-    this.canons[name] = new Canon(this.loop);
-    for(j=0,ln=canonArray[i].length;j<ln;++j) {
-      this.canons[name].addVoice.apply(this.canons[name], canonArray[i][j]);
-    }
+    this.canons[name].addVoice.apply(this.canons[name], canonArray[i]);
   }
 };
 Theme.prototype.setCurrentCanon = function(name) {
   if(!this.canons[name]) { throw 'Canon ' + name + ' does not exist.'; }
   this.currentCanon = this.canons[name];
+};
+Theme.prototype.getData = function(canonName) {
+  return this.canons[canonName].getData();
 };
 
 function Canon(loop) {
@@ -120,8 +121,9 @@ function Canon(loop) {
   }
   this.voices = {};
 }
-Canon.prototype.addVoice = function(name, transform, delay) {
-  var newVoice = new Voice(this, transform, delay);
+Canon.prototype.addVoice = function(name, transform, delay, color) {
+  console.log('adding voice to canon', arguments);
+  var newVoice = new Voice(this, transform, delay, color);
   this.voices[name] = newVoice;
   return newVoice;
 };
@@ -162,11 +164,12 @@ Canon.prototype.getData = function() {
 // voices all belong to a canon, and have a transform function
 // applied to them, as well as a delay to account for when they
 // come in
-function Voice(canon, delay, transform) {
+function Voice(canon, delay, transform, color) {
   this._loop = canon.loop;
   this.delay = delay === undefined ? 0 : delay;
   this.setTransform(transform);
   this.gain = context.createGain();
+  if(color) { this.color = color; }
 }
 // the repetition factor determines how many times the transformed loop
 // needs to be played in a 'single' loop. This can be less than one, which
@@ -201,10 +204,13 @@ Voice.prototype.adjustGain = function(gainValue) {
   this.gain.gain.value = gainValue;
 };
 Voice.prototype.getData = function() {
+  var self = this;
   // this will eventually (probably) take a range and
   // output something more complicated than the loop
   var delay = this.delay || 0;
-  return this.loop.map(function (note) { return note.getData(delay); });
+  return this.loop.map(function (note) { 
+    return note.getData(delay);
+  });
 };
 
 // this *returns* a transform function
@@ -226,17 +232,23 @@ var stateMachine = new machina.Fsm({
 });
 
 
-var BWV1074_Canon_1 = new Canon(BWV1074);
-BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(7));
-BWV1074_Canon_1.addVoice('C', 0.5);
-BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(-3));
-BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
+BWV1074.addCanon('Walther', [
+  ['G', 0  ,   shiftPitch(7), '#2368A0'],
+  ['C', 0.5,            null, '#B13631'],
+  ['A', 1  ,  shiftPitch(-3), '#8A6318'],
+  ['D', 1.5, shiftPitch(-10), '#337331']
+]);
+// var BWV1074_Canon_1 = new Canon(BWV1074);
+// BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(7));
+// BWV1074_Canon_1.addVoice('C', 0.5);
+// BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(-3));
+// BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
 
-BWV1074_Canon_1.adjustGain(0.3);
+// BWV1074_Canon_1.adjustGain(0.3);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
-  BWV1074_Canon_1.play(2);
+  // BWV1074_Canon_1.play(2);
 });
 
 // visual bits
@@ -255,7 +267,7 @@ var yScale = d3.scale.log()
   .range([380, 20]);
 
 var notes = interactive.selectAll('.note')
-  .data(BWV1074_Canon_1.getData().sort(function(a, b) {
+  .data(BWV1074.getData('Walther').sort(function(a, b) {
     return a[1] <= b[1]; // duration
   }));
 
@@ -274,7 +286,7 @@ notes.enter()
   .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
   .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
   .attr('fill', function(d) {
-    return colors[d[3]];
+    return d[4].color;
   })
   .on('mouseenter', function(d) {
     BWV1074_Canon_1.adjustGain(0.1);
