@@ -45,7 +45,7 @@ function Note(note, octave, duration, position) {
   this.position = position;
 }
 Note.prototype.getData = function(delay) {
-  delay |= 0;
+  delay = delay === undefined ? 0 : delay;
   return [this.frequency, this.duration, this.position + delay];
 };
 
