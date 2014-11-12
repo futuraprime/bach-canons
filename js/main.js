@@ -223,6 +223,8 @@ function shiftPitch(steps) {
 
 var stateMachine = new machina.Fsm({
   states : {
+    "theme" : {
+    },
     "walther" : {
     },
     "marpurg" : {
