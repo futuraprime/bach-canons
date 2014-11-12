@@ -48,19 +48,8 @@ Note.prototype.getData = function(delay) {
   return [this.frequency, this.duration, this.position + delay];
 };
 
-var BWV1074_notes = ([
-  [C, 4, 0.5 , 0.0 ],
-  [F, 4, 1   , 0.5 ],
-  [D, 4, 0.5 , 1.5 ],
-  [E, 4, 1   , 2.0 ],
-  [C, 4, 0.5 , 3.0 ],
-  [D, 4, 0.5 , 3.5 ],
-  [B, 3, 0.75, 4.0 ],
-  [A, 3, 0.25, 4.75],
-  [B, 3, 0.25, 5.0 ]
-]); //.map(function(note) { return new Note(note); } );
 
-var BWV1074 = new Theme(BWV1074_notes);
+
 
 // this is (currently) our musical instrument
 function playFrequency(frequency, duration, position, gain) {
@@ -95,6 +84,7 @@ function Theme(noteArray) {
   this.loop = noteArray.map(function(note) {
     return new Note(note);
   });
+  this.theme = new Voice(this, null, null, null);
   this.canons = {};
 }
 Theme.prototype.addCanon = function(name, canonArray) {
@@ -117,9 +107,16 @@ Theme.prototype.getData = function(canonName) {
   return this.canons[canonName].getData();
 };
 Theme.prototype.play = function(canonName, repetitions) {
-  if(!this.canons[canonName]) { throw 'Canon ' + canonName + ' does not exist.'; }
+  if(!this.canons[canonName]) { 
+    // no canon, play the theme alone
+    return this.theme.play(context.currentTime + 0.1);
+  }
+
   return this.canons[canonName].play(repetitions);
 };
+
+
+
 
 function Canon(loop) {
   if(loop instanceof Theme) {
@@ -166,6 +163,8 @@ Canon.prototype.getData = function() {
   }
   return ret.concat.apply(ret,voices);
 };
+
+
 
 // the "voice" is the core component of the canon: canons
 // are composed of several voices.
@@ -230,25 +229,51 @@ function shiftPitch(steps) {
   };
 }
 
-var stateMachine = new machina.Fsm({
-  states : {
-    "theme" : {
-    },
-    "walther" : {
-    },
-    "marpurg" : {
-
-    }
-  }
-});
 
 
+
+var BWV1074_notes = ([
+  [C, 4, 0.5 , 0.0 ],
+  [F, 4, 1   , 0.5 ],
+  [D, 4, 0.5 , 1.5 ],
+  [E, 4, 1   , 2.0 ],
+  [C, 4, 0.5 , 3.0 ],
+  [D, 4, 0.5 , 3.5 ],
+  [B, 3, 0.75, 4.0 ],
+  [A, 3, 0.25, 4.75],
+  [B, 3, 0.25, 5.0 ]
+]);
+
+var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
   ['G', 0  ,   shiftPitch(7), '#2368A0'],
   ['C', 0.5,            null, '#B13631'],
   ['A', 1  ,  shiftPitch(-3), '#8A6318'],
   ['D', 1.5, shiftPitch(-10), '#337331']
 ]);
+
+
+
+
+var stateMachine = new machina.Fsm({
+  initialize : function() {
+    var self = this;
+    var playButton = document.getElementById('play');
+    play.addEventListener('click', function() {
+      self.handle('play');
+    });
+  },
+  initialState : 'theme',
+  states : {
+    'theme' : {
+    },
+    'walther' : {
+    },
+    'marpurg' : {
+
+    }
+  }
+});
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
