@@ -266,19 +266,23 @@ var stateMachine = new machina.Fsm({
   initialState : 'theme',
   states : {
     'theme' : {
+      play : function() {
+        BWV1074.play();
+      }
     },
     'walther' : {
+      play : function() {
+        BWV1074.play('walther');
+      }
     },
     'marpurg' : {
-
+      play : function() {
+        BWV1074.play('marpurg');
+      }
     }
   }
 });
 
-var playButton = document.getElementById('play');
-play.addEventListener('click', function() {
-  BWV1074.play('walther');
-});
 
 // visual bits
 var interactive = d3.select('#interactive')
