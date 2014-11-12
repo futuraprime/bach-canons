@@ -5,6 +5,7 @@ var context = new AudioContext();
 var wholeNote = 1.5;
 
 // steps is steps from A4
+// ntf = note to frequency
 function ntf(steps) {
   return 440 * Math.pow(2, (steps/12));
 }
@@ -20,6 +21,12 @@ var Gs = ntf(-1);
 var A  = ntf( 0);
 var As = ntf( 1);
 var B  = ntf( 2);
+
+// note, octave to frequency
+// "note" is actually a frequency (from above)
+function notf(note, octave) {
+  return note * Math.pow(2, octave - 4);
+}
 
 // this can actually take inputs in three ways...
 // it can take note, octave, duration, position
@@ -38,7 +45,7 @@ function Note(note, octave, duration, position) {
     position = duration;
     duration = octave;
   } else {
-    this.frequency = note * Math.pow(2, octave - 4);
+    this.frequency = notf(note, octave);
   }
   this.duration = duration;
   this.position = position;
@@ -221,11 +228,45 @@ Voice.prototype.getData = function() {
   });
 };
 
+
+
+
+function Transform() {
+  this.functions = [];
+}
+Transform.prototype.shiftPitch = function(steps) {
+  this.functions.push(function(note) {
+    return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
+  });
+  return this;
+};
+Transform.prototype.invert = function(center) {
+  this.functions.push(function(note) {
+    return new Note(center / note.frequency * center, note.duration, note.position);
+  });
+  return this;
+};
+// fn breaks the chain and returns the transform function itself
+Transform.prototype.fn = function() {
+  var self = this;
+  return function(note) {
+    for (var i=0,l=self.functions.length;i<l;++i) {
+      note = self.functions[i](note);
+    }
+    return note;
+  };
+};
+
 // this *returns* a transform function
 function shiftPitch(steps) {
   return function(note) {
     // return [ note[0] * Math.pow(2, (steps/12)) ].concat(note.slice(1));
     return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
+  };
+}
+function invert(center) {
+  return function(note) {
+    return new Note(center / note.frequency * center, note.duration, note.position);
   };
 }
 
@@ -251,7 +292,12 @@ BWV1074.addCanon('walther', [
   ['A', 1  ,  shiftPitch(-3), '#8A6318'],
   ['D', 1.5, shiftPitch(-10), '#337331']
 ]);
-
+BWV1074.addCanon('marpurg', [
+  ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
+  ['C', 0.5, new Transform().invert(notf(C,4)).fn()               , '#337331' ],
+  ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
+  ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
+]);
 
 
 
