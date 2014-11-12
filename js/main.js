@@ -8,7 +8,6 @@ var wholeNote = 1.5;
 function ntf(steps) {
   return 440 * Math.pow(2, (steps/12));
 }
-
 var C  = ntf(-9);
 var Cs = ntf(-8);
 var D  = ntf(-7);
@@ -105,12 +104,21 @@ Theme.prototype.addCanon = function(name, canonArray) {
     this.canons[name].addVoice.apply(this.canons[name], canonArray[i]);
   }
 };
+Theme.prototype.getCanon = function(canonName) {
+  if(!this.canons[canonName]) { throw 'Canon ' + canonName + ' does not exist.'; }
+  return this.canons[canonName];
+};
 Theme.prototype.setCurrentCanon = function(name) {
   if(!this.canons[name]) { throw 'Canon ' + name + ' does not exist.'; }
   this.currentCanon = this.canons[name];
 };
 Theme.prototype.getData = function(canonName) {
+  if(!this.canons[canonName]) { throw 'Canon ' + canonName + ' does not exist.'; }
   return this.canons[canonName].getData();
+};
+Theme.prototype.play = function(canonName, repetitions) {
+  if(!this.canons[canonName]) { throw 'Canon ' + canonName + ' does not exist.'; }
+  return this.canons[canonName].play(repetitions);
 };
 
 function Canon(loop) {
@@ -169,6 +177,7 @@ function Voice(canon, delay, transform, color) {
   this.delay = delay === undefined ? 0 : delay;
   this.setTransform(transform);
   this.gain = context.createGain();
+  this.gain.gain.value = 0.5;
   if(color) { this.color = color; }
 }
 // the repetition factor determines how many times the transformed loop
@@ -234,23 +243,16 @@ var stateMachine = new machina.Fsm({
 });
 
 
-BWV1074.addCanon('Walther', [
+BWV1074.addCanon('walther', [
   ['G', 0  ,   shiftPitch(7), '#2368A0'],
   ['C', 0.5,            null, '#B13631'],
   ['A', 1  ,  shiftPitch(-3), '#8A6318'],
   ['D', 1.5, shiftPitch(-10), '#337331']
 ]);
-// var BWV1074_Canon_1 = new Canon(BWV1074);
-// BWV1074_Canon_1.addVoice('G', 0  , shiftPitch(7));
-// BWV1074_Canon_1.addVoice('C', 0.5);
-// BWV1074_Canon_1.addVoice('A', 1  , shiftPitch(-3));
-// BWV1074_Canon_1.addVoice('D', 1.5, shiftPitch(-10));
-
-// BWV1074_Canon_1.adjustGain(0.3);
 
 var playButton = document.getElementById('play');
 play.addEventListener('click', function() {
-  // BWV1074_Canon_1.play(2);
+  BWV1074.play('walther');
 });
 
 // visual bits
@@ -269,7 +271,7 @@ var yScale = d3.scale.log()
   .range([380, 20]);
 
 var notes = interactive.selectAll('.note')
-  .data(BWV1074.getData('Walther').sort(function(a, b) {
+  .data(BWV1074.getData('walther').sort(function(a, b) {
     return a[1] <= b[1]; // duration
   }));
 
@@ -291,14 +293,14 @@ notes.enter()
     return d[4].color;
   })
   .on('mouseenter', function(d) {
-    BWV1074_Canon_1.adjustGain(0.1);
+    BWV1074.getCanon('walther').adjustGain(0.1);
     d.voice.adjustGain(0.4);
     notes.attr('opacity', function(dPrime) {
       return dPrime[3] === d[3] ? 1 : 0.25;
     });
   })
   .on('mouseleave', function(d) {
-    BWV1074_Canon_1.adjustGain(0.3);
+    BWV1074.getCanon('walther').adjustGain(0.3);
     notes.attr('opacity', 1);
   });
 
