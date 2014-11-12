@@ -298,6 +298,10 @@ BWV1074.addCanon('marpurg', [
   ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
   ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
 ]);
+BWV1074.addCanon('mattheson', [
+  // oh this is going to be fun to transcribe...
+  // but in principle those flats are still an even transformation right?
+]);
 
 
 
