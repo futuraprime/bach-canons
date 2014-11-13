@@ -110,7 +110,10 @@ Theme.prototype.setCurrentCanon = function(name) {
   this.currentCanon = this.canons[name];
 };
 Theme.prototype.getData = function(canonName) {
-  if(!this.canons[canonName]) { throw 'Canon ' + canonName + ' does not exist.'; }
+  if(!this.canons[canonName]) {
+    // no canon, return the theme alone
+    return this.theme.getData();
+  }
   return this.canons[canonName].getData();
 };
 Theme.prototype.play = function(canonName, repetitions) {
@@ -321,32 +324,59 @@ var yScale = d3.scale.log()
   .domain([-25, 5].map(ntf))
   .range([380, 20]);
 
-var notes = interactive.selectAll('.note')
-  .data(BWV1074.getData('walther').sort(function(a, b) {
-    return a[1] <= b[1]; // duration
-  }));
+var notes = interactive.selectAll('.note');
 
-notes.enter()
-  .append('svg:rect')
-  .attr('class', 'note')
-  .attr('x', function(d) { return xScale(d[2]); })
-  .attr('y', function(d) { return yScale(d[0]); })
-  .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
-  .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
-  .attr('fill', function(d) {
-    return d[4].color;
-  })
-  .on('mouseenter', function(d) {
-    BWV1074.getCanon('walther').adjustGain(0.1);
-    d.voice.adjustGain(0.4);
-    notes.attr('opacity', function(dPrime) {
-      return dPrime[3] === d[3] ? 1 : 0.25;
+function updateTheme(data) {
+  var noteData = notes.data(data);
+
+  noteData.exit().remove();
+
+  noteData.enter()
+    .append('svg:rect')
+    .attr('class', 'note')
+    .on('mouseenter', function(d) {
+      BWV1074.getCanon('walther').adjustGain(0.1);
+      d.voice.adjustGain(0.4);
+      notes.attr('opacity', function(dPrime) {
+        return dPrime[3] === d[3] ? 1 : 0.25;
+      });
+    })
+    .on('mouseleave', function(d) {
+      BWV1074.getCanon('walther').adjustGain(0.3);
+      notes.attr('opacity', 1);
+    })
+    .attr('fill', function(d) {
+      return d[4].color;
     });
-  })
-  .on('mouseleave', function(d) {
-    BWV1074.getCanon('walther').adjustGain(0.3);
-    notes.attr('opacity', 1);
-  });
+
+  noteData
+    .attr('x', function(d) { return xScale(d[2]); })
+    .attr('y', function(d) { return yScale(d[0]); })
+    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+    .attr('width', function(d) { return xScale(d[1]) - xScale(0); });
+}
+
+// notes.data(BWV1074.getData('walther')).enter()
+//   .append('svg:rect')
+//   .attr('class', 'note')
+//   .attr('x', function(d) { return xScale(d[2]); })
+//   .attr('y', function(d) { return yScale(d[0]); })
+//   .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+//   .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
+//   .attr('fill', function(d) {
+//     return d[4].color;
+//   })
+//   .on('mouseenter', function(d) {
+//     BWV1074.getCanon('walther').adjustGain(0.1);
+//     d.voice.adjustGain(0.4);
+//     notes.attr('opacity', function(dPrime) {
+//       return dPrime[3] === d[3] ? 1 : 0.25;
+//     });
+//   })
+//   .on('mouseleave', function(d) {
+//     BWV1074.getCanon('walther').adjustGain(0.3);
+//     notes.attr('opacity', 1);
+//   });
 
 
 
@@ -365,16 +395,25 @@ var stateMachine = new machina.Fsm({
   initialState : 'theme',
   states : {
     'theme' : {
+      _onEnter : function() {
+        updateTheme(BWV1074.getData());
+      },
       play : function() {
         BWV1074.play();
       }
     },
     'walther' : {
+      _onEnter : function() {
+        updateTheme(BWV1074.getData('walther'));
+      },
       play : function() {
         BWV1074.play('walther');
       }
     },
     'marpurg' : {
+      _onEnter : function() {
+        updateTheme(BWV1074.getData('marpurg'));
+      },
       play : function() {
         BWV1074.play('marpurg');
       }
