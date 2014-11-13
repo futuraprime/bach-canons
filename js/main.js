@@ -134,7 +134,7 @@ function Canon(loop) {
   this.voices = {};
 }
 Canon.prototype.addVoice = function(name, transform, delay, color) {
-  console.log('adding voice to canon', arguments);
+  // console.log('adding voice to canon', arguments);
   var newVoice = new Voice(this, transform, delay, color);
   this.voices[name] = newVoice;
   return newVoice;
@@ -305,34 +305,6 @@ BWV1074.addCanon('mattheson', [
 
 
 
-var stateMachine = new machina.Fsm({
-  initialize : function() {
-    var self = this;
-    var playButton = document.getElementById('play');
-    play.addEventListener('click', function() {
-      self.handle('play');
-    });
-  },
-  initialState : 'theme',
-  states : {
-    'theme' : {
-      play : function() {
-        BWV1074.play();
-      }
-    },
-    'walther' : {
-      play : function() {
-        BWV1074.play('walther');
-      }
-    },
-    'marpurg' : {
-      play : function() {
-        BWV1074.play('marpurg');
-      }
-    }
-  }
-});
-
 
 // visual bits
 var interactive = d3.select('#interactive')
@@ -353,13 +325,6 @@ var notes = interactive.selectAll('.note')
   .data(BWV1074.getData('walther').sort(function(a, b) {
     return a[1] <= b[1]; // duration
   }));
-
-var colors = {
-  'G' : '#2368A0',
-  'C' : '#B13631',
-  'A' : '#8A6318',
-  'D' : '#337331'
-};
 
 notes.enter()
   .append('svg:rect')
@@ -383,3 +348,36 @@ notes.enter()
     notes.attr('opacity', 1);
   });
 
+
+
+var stateMachine = new machina.Fsm({
+  initialize : function() {
+    var self = this;
+    var playButton = document.getElementById('play');
+    play.addEventListener('click', function() {
+      self.handle('play');
+    });
+    $('.states').on('click', '.state-change', function(evt) {
+      self.transition(this.getAttribute('state'));
+      return false;
+    });
+  },
+  initialState : 'theme',
+  states : {
+    'theme' : {
+      play : function() {
+        BWV1074.play();
+      }
+    },
+    'walther' : {
+      play : function() {
+        BWV1074.play('walther');
+      }
+    },
+    'marpurg' : {
+      play : function() {
+        BWV1074.play('marpurg');
+      }
+    }
+  }
+});

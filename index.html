@@ -7,6 +7,7 @@
   <script type="text/javascript" src="//use.typekit.net/kso0koy.js"></script>
   <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
   <link rel="stylesheet" href="css/style.css">
+  <script src="deps/jquery/dist/jquery.js"></script>
   <script src="deps/lodash/dist/lodash.js"></script>
   <script src="deps/machina/lib/machina.js"></script>
   <script src="deps/d3/d3.js"></script>
@@ -15,6 +16,11 @@
   <h1>Canons</h1>
   <h2>Bach Canons</h2>
   <section id="first"></section>
+  <div class="states">
+    <button class="state-change" state="theme">Theme</button>
+    <button class="state-change" state="walther">Walther</button>
+    <button class="state-change" state="marpurg">Marpurg</button>
+  </div>
   <button id="play">Play</button>
   <div>
     <svg id="interactive"></svg>
