@@ -231,7 +231,7 @@ Voice.prototype.getData = function() {
   var delay = this.delay || 0;
   return this.loop.map(function (note) { 
     var out = note.getData(delay);
-    out[4] = self;
+    out[3] = self;
     return out;
   });
 };
@@ -351,8 +351,9 @@ function updateDisplay(canonName) {
     // .on('mouseenter', null)
     // .on('mouseleave', null)
     .on('mouseenter', function(d) {
+      console.log('ze bloop!!', d[3]);
       BWV1074.getCanon(canonName).adjustGain(0.1);
-      d[4].adjustGain(0.4);
+      d[3].adjustGain(0.4);
       notes.attr('opacity', function(dPrime) {
         return dPrime[3] === d[3] ? 1 : 0.25;
       });
@@ -373,7 +374,7 @@ function updateDisplay(canonName) {
     .attr('y', function(d) { return yScale(d[0]); })
     .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
     .attr('fill', function(d) {
-      return d[4].color;
+      return d[3].color;
     });
 }
 
