@@ -162,14 +162,14 @@ Canon.prototype.getData = function() {
   var note, k;
   // addVoice is leaning on a bit of intentional scope leakage here
   // to know what 'k' is
-  function addVoice(n) {
-    var ret = n.concat(k, self.voices[k]);
-    ret.voice = self.voices[k];
-    return ret;
-  }
+  // function addVoice(n) {
+  //   var ret = n.concat(k, self.voices[k]);
+  //   ret.voice = self.voices[k];
+  //   return ret;
+  // }
   for(k in this.voices) {
-    voice = this.voices[k].getData().map(addVoice);
-    voices.push(voice);
+    // voice = this.voices[k].getData().map(addVoice);
+    voices.push(this.voices[k].getData());
   }
   return ret.concat.apply(ret,voices);
 };
@@ -227,7 +227,9 @@ Voice.prototype.getData = function() {
   // output something more complicated than the loop
   var delay = this.delay || 0;
   return this.loop.map(function (note) { 
-    return note.getData(delay);
+    var out = note.getData(delay);
+    out[4] = self;
+    return out;
   });
 };
 
@@ -324,60 +326,51 @@ var yScale = d3.scale.log()
   .domain([-25, 5].map(ntf))
   .range([380, 20]);
 
-var notes = interactive.selectAll('.note');
 
-function updateTheme(data) {
-  var noteData = notes.data(data);
+function updateDisplay(canonName) {
+  var notes = interactive.selectAll('.note');
+  var noteData = notes.data(BWV1074.getData(canonName));
+
+  var themeData = BWV1074.getData();
+  var tL = themeData.length;
 
   noteData.exit().remove();
 
   noteData.enter()
     .append('svg:rect')
     .attr('class', 'note')
+    .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
+    .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
+    .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
+    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
     .on('mouseenter', function(d) {
-      BWV1074.getCanon('walther').adjustGain(0.1);
+      BWV1074.getCanon(canonName).adjustGain(0.1);
       d.voice.adjustGain(0.4);
       notes.attr('opacity', function(dPrime) {
         return dPrime[3] === d[3] ? 1 : 0.25;
       });
     })
     .on('mouseleave', function(d) {
-      BWV1074.getCanon('walther').adjustGain(0.3);
+      BWV1074.getCanon(canonName).adjustGain(0.3);
       notes.attr('opacity', 1);
-    })
-    .attr('fill', function(d) {
-      return d[4].color;
     });
 
   noteData
+    .transition().duration(250)
+    .delay(function(d, idx) {
+      return idx * 30 + Math.floor(idx/tL) * 150;
+    })
     .attr('x', function(d) { return xScale(d[2]); })
+    .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
+    .transition().delay(function(d, idx) {
+      return 250 + idx * 30 + Math.floor(idx/tL) * 150;
+    })
     .attr('y', function(d) { return yScale(d[0]); })
     .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
-    .attr('width', function(d) { return xScale(d[1]) - xScale(0); });
+    .attr('fill', function(d) {
+      return d[4].color;
+    });
 }
-
-// notes.data(BWV1074.getData('walther')).enter()
-//   .append('svg:rect')
-//   .attr('class', 'note')
-//   .attr('x', function(d) { return xScale(d[2]); })
-//   .attr('y', function(d) { return yScale(d[0]); })
-//   .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
-//   .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
-//   .attr('fill', function(d) {
-//     return d[4].color;
-//   })
-//   .on('mouseenter', function(d) {
-//     BWV1074.getCanon('walther').adjustGain(0.1);
-//     d.voice.adjustGain(0.4);
-//     notes.attr('opacity', function(dPrime) {
-//       return dPrime[3] === d[3] ? 1 : 0.25;
-//     });
-//   })
-//   .on('mouseleave', function(d) {
-//     BWV1074.getCanon('walther').adjustGain(0.3);
-//     notes.attr('opacity', 1);
-//   });
-
 
 
 var stateMachine = new machina.Fsm({
@@ -396,7 +389,7 @@ var stateMachine = new machina.Fsm({
   states : {
     'theme' : {
       _onEnter : function() {
-        updateTheme(BWV1074.getData());
+        updateDisplay();
       },
       play : function() {
         BWV1074.play();
@@ -404,7 +397,7 @@ var stateMachine = new machina.Fsm({
     },
     'walther' : {
       _onEnter : function() {
-        updateTheme(BWV1074.getData('walther'));
+        updateDisplay('walther');
       },
       play : function() {
         BWV1074.play('walther');
@@ -412,7 +405,7 @@ var stateMachine = new machina.Fsm({
     },
     'marpurg' : {
       _onEnter : function() {
-        updateTheme(BWV1074.getData('marpurg'));
+        updateDisplay('marpurg');
       },
       play : function() {
         BWV1074.play('marpurg');
