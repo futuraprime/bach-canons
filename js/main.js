@@ -102,7 +102,10 @@ Theme.prototype.addCanon = function(name, canonArray) {
   }
 };
 Theme.prototype.getCanon = function(canonName) {
-  if(!this.canons[canonName]) { throw 'Canon ' + canonName + ' does not exist.'; }
+  if(!this.canons[canonName]) {
+    // no canon, return the theme alone
+    return this.theme;
+  }
   return this.canons[canonName];
 };
 Theme.prototype.setCurrentCanon = function(name) {
@@ -342,10 +345,14 @@ function updateDisplay(canonName) {
     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
     .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
-    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+    .attr('height', yScale(ntf(0)) - yScale(ntf(1)));
+
+  noteData
+    // .on('mouseenter', null)
+    // .on('mouseleave', null)
     .on('mouseenter', function(d) {
       BWV1074.getCanon(canonName).adjustGain(0.1);
-      d.voice.adjustGain(0.4);
+      d[4].adjustGain(0.4);
       notes.attr('opacity', function(dPrime) {
         return dPrime[3] === d[3] ? 1 : 0.25;
       });
@@ -353,9 +360,7 @@ function updateDisplay(canonName) {
     .on('mouseleave', function(d) {
       BWV1074.getCanon(canonName).adjustGain(0.3);
       notes.attr('opacity', 1);
-    });
-
-  noteData
+    })
     .transition().duration(250)
     .delay(function(d, idx) {
       return idx * 30 + Math.floor(idx/tL) * 150;
