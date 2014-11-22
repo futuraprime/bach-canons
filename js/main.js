@@ -120,7 +120,7 @@ Theme.prototype.getData = function(canonName) {
   return this.canons[canonName].getData();
 };
 Theme.prototype.play = function(canonName, repetitions) {
-  if(!this.canons[canonName]) { 
+  if(!this.canons[canonName]) {
     // no canon, play the theme alone
     return this.theme.play(context.currentTime + 0.1);
   }
@@ -229,7 +229,7 @@ Voice.prototype.getData = function() {
   // this will eventually (probably) take a range and
   // output something more complicated than the loop
   var delay = this.delay || 0;
-  return this.loop.map(function (note) { 
+  return this.loop.map(function (note) {
     var out = note.getData(delay);
     out[3] = self;
     return out;
