@@ -122,11 +122,19 @@ Note.prototype.play = function(startTime, gain) {
 
 
 
+function convertToNotes(noteArray) {
+  var elapsedTime = 0;
+  var outArray = [];
+  for(var i=0,l=noteArray.length;i<l;++i) {
+    outArray[i] = new Note(noteArray[i][0], noteArray[i][1], noteArray[i][2], elapsedTime);
+    elapsedTime += noteArray[i][2];
+  }
+  return outArray;
+}
+
 
 function Theme(noteArray) {
-  this.loop = noteArray.map(function(note) {
-    return new Note(note);
-  });
+  this.loop = convertToNotes(noteArray);
   this.theme = new Voice(this, null, null, null);
   this.canons = {};
 }
@@ -176,8 +184,14 @@ function Canon(loop) {
   this.voices = {};
 }
 Canon.prototype.addVoice = function(name, transform, delay, color) {
+  var newVoice;
   // console.log('adding voice to canon', arguments);
-  var newVoice = new Voice(this, transform, delay, color);
+  if(transform instanceof Voice) {
+    // we're directly adding a created voice here...
+    newVoice = transform;
+  } else {
+    newVoice = new Voice(this, delay, transform, color);
+  }
   this.voices[name] = newVoice;
   return newVoice;
 };
@@ -221,9 +235,14 @@ Canon.prototype.getData = function() {
 // applied to them, as well as a delay to account for when they
 // come in
 function Voice(canon, delay, transform, color) {
-  this._loop = canon.loop;
-  this.delay = delay === undefined ? 0 : delay;
+  if(canon.hasOwnProperty('loop')) {
+    this._loop = canon.loop;
+  } else {
+    // we assume the canon presented is a notearray.
+    this._loop = convertToNotes(canon);
+  }
   this.setTransform(transform);
+  this.delay = delay === undefined ? 0 : delay;
   this.gain = context.createGain();
   this.gain.gain.value = 0.5;
   this.gain.connect(context.destination);
@@ -334,18 +353,35 @@ var BWV1074_notes = ([
   [B, 3, 0.125, 4.875 ]
 ]);
 
+var blue   = '#2368A0';
+var yellow = '#8A6318';
+var red    = '#B13631';
+var green  = '#337331';
+
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  , new Transform().shiftByTones( 4).fn(), '#2368A0'],
-  ['C', 0.5,                                  null, '#B13631'],
-  ['A', 1  , new Transform().shiftByTones(-2).fn(), '#8A6318'],
-  ['D', 1.5, new Transform().shiftByTones(-6).fn(), '#337331']
+  ['G', new Transform().shiftByTones( 4).fn(), 0  ,   blue],
+  ['C',                                  null, 0.5,    red],
+  ['A', new Transform().shiftByTones(-2).fn(), 1  , yellow],
+  ['D', new Transform().shiftByTones(-6).fn(), 1.5,  green]
 ]);
 BWV1074.addCanon('marpurg', [
-  // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
-  // ['C', 0.5, new Transform().invert(notf(C,4)).fn()               , '#337331' ],
-  // ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
-  // ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
+  ['F', new Voice([
+    [F, 3, 0.5], [C, 3, 1.0], [E, 3, 0.5], [D, 3, 1], [F, 3, 0.5], [E, 3, 0.5], [G, 3, 0.75], [A, 3, 0.125], [G, 3, 0.125]
+    ], 0, null, blue)],
+  ['C', new Voice([
+    [C, 4, 0.5], [G, 3, 1.0], [B, 3, 0.5], [A, 3, 1], [C, 4, 0.5], [B, 3, 0.5], [D, 4, 0.75], [E, 4, 0.125], [D, 4, 0.125]
+    ], 0.5, null, red)],
+  ['E', new Voice([
+    [E, 4, 0.5], [B, 3, 1.0], [D, 4, 0.5], [C, 4, 1], [E, 4, 0.5], [D, 4, 0.5], [F, 4, 0.75], [G, 4, 0.125], [F, 4, 0.125]
+    ], 1, null, yellow)],
+  ['B', new Voice([
+    [B, 4, 0.5], [F, 4, 1.0], [A, 4, 0.5], [G, 4, 1], [B, 4, 0.5], [A, 4, 0.5], [C, 5, 0.75], [D, 5, 0.125], [C, 5, 0.125]
+    ], 1.5, null, green)]
+  // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), red ],
+  // ['C', 0.5, new Transform().invert(notf(C,4)).fn()               ,  green ],
+  // ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), blue ],
+  // ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), yellow ]
 ]);
 BWV1074.addCanon('mattheson', [
   // oh this is going to be fun to transcribe...
