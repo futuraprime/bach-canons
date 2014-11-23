@@ -26,6 +26,9 @@ function noteToString(note) {
   return _.invert(NOTE_IDS)[note];
 }
 
+var CHROMATIC = [C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B];
+var DIATONIC  = [C, D, E, F, G, A, B];
+
 // so if you want a note from a number, you fetch it out of this array...
 // NOTES[40], for example, will yield you [C, 4] and you can then push
 // duration and position for it to make a new Note.
@@ -274,8 +277,11 @@ Voice.prototype.getData = function() {
 function Transform() {
   this.functions = [];
 }
+// note: this shifts the pitch diatonically
 Transform.prototype.shiftPitch = function(steps) {
   this.functions.push(function(note) {
+    var n = note.note, o = note.octave;
+    var minOctaves = Math.floor(Math.abs(steps/7)) * steps/Math.abs(steps);
     return new Note(note.number + steps, note.duration, note.position);
   });
   return this;
