@@ -407,7 +407,16 @@ var yScale = d3.scale.linear()
 
 
 function updateDisplay(canonName) {
+  interactive.selectAll('.note')
+    .attr('class', 'removing')
+    .transition()
+    .duration(100)
+    .style('opacity', '0')
+    .delay(100)
+    .remove();
+
   var notes = interactive.selectAll('.note');
+
   var noteData = notes.data(BWV1074.getData(canonName));
 
   var themeData = BWV1074.getData();
@@ -439,7 +448,11 @@ function updateDisplay(canonName) {
       notes.attr('opacity', 1);
     })
     .transition().duration(250)
+    .style('fill', function(d) {
+      return d[3].color;
+    })
     .delay(function(d, idx) {
+      // what we actually want is something that says which voice they're in...
       return idx * 30 + Math.floor(idx/tL) * 150;
     })
     .attr('x', function(d) { return xScale(d[2]); })
@@ -448,10 +461,7 @@ function updateDisplay(canonName) {
       return 250 + idx * 30 + Math.floor(idx/tL) * 150;
     })
     .attr('y', function(d) { return yScale(d[0]); })
-    .attr('height', yScale(38) - yScale(39))
-    .attr('fill', function(d) {
-      return d[3].color;
-    });
+    .attr('height', yScale(38) - yScale(39));
 }
 
 
@@ -490,7 +500,7 @@ var stateMachine = new machina.Fsm({
         updateDisplay('marpurg');
       },
       play : function() {
-        BWV1074.play('marpurg');
+        BWV1074.play('marpurg', 3);
       }
     }
   }
