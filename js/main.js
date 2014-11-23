@@ -2,38 +2,57 @@
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
-var wholeNote = 1.5;
+var wholeNote = 1;
 
-// steps is steps from A4
-// ntf = note to frequency
-function ntf(steps) {
-  return 440 * Math.pow(2, (steps/12));
-}
-var C  = ntf(-9);
-var Cs = ntf(-8);
-var D  = ntf(-7);
-var Ds = ntf(-6);
-var E  = ntf(-5);
-var F  = ntf(-4);
-var Fs = ntf(-3);
-var G  = ntf(-2);
-var Gs = ntf(-1);
-var A  = ntf( 0);
-var As = ntf( 1);
-var B  = ntf( 2);
+// these are the number of the key of these notes
+// in the zeroth octave
+// obviously, keys below 1 don't exist...
+var NOTE_IDS = {};
+var B  = NOTE_IDS.B  = 'B';
+var Bb = NOTE_IDS.Bb = 'Bb';
+var A  = NOTE_IDS.A  = 'A';
+var Ab = NOTE_IDS.Ab = 'Ab';
+var G  = NOTE_IDS.G  = 'G';
+var Gb = NOTE_IDS.Gb = 'Gb';
+var F  = NOTE_IDS.F  = 'F';
+var E  = NOTE_IDS.E  = 'E';
+var Eb = NOTE_IDS.Eb = 'Eb';
+var D  = NOTE_IDS.D  = 'D';
+var Db = NOTE_IDS.Db = 'Db';
+var C  = NOTE_IDS.C  = 'C';
 
-// note, octave to frequency
-// "note" is actually a frequency (from above)
-function notf(note, octave) {
-  return note * Math.pow(2, octave - 4);
+// mainly for debugging
+function noteToString(note) {
+  return _.invert(NOTE_IDS)[note];
 }
+
+var CHROMATIC = [C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B];
+var DIATONIC  = [C, D, E, F, G, A, B];
+
+// so if you want a note from a number, you fetch it out of this array...
+// NOTES[40], for example, will yield you [C, 4] and you can then push
+// duration and position for it to make a new Note.
+var NOTES = [                                                        [Ab, 0], [A, 0], [Bb, 0], [B, 0],
+  [C, 1], [Db, 1], [D, 1], [Eb, 1], [E, 1], [F, 1], [Gb, 1], [G, 1], [Ab, 1], [A, 1], [Bb, 1], [B, 1],
+  [C, 2], [Db, 2], [D, 2], [Eb, 2], [E, 2], [F, 2], [Gb, 2], [G, 2], [Ab, 2], [A, 2], [Bb, 2], [B, 2],
+  [C, 3], [Db, 3], [D, 3], [Eb, 3], [E, 3], [F, 3], [Gb, 3], [G, 3], [Ab, 3], [A, 3], [Bb, 3], [B, 3],
+  [C, 4], [Db, 4], [D, 4], [Eb, 4], [E, 4], [F, 4], [Gb, 4], [G, 4], [Ab, 4], [A, 4], [Bb, 4], [B, 4],
+  [C, 5], [Db, 5], [D, 5], [Eb, 5], [E, 5], [F, 5], [Gb, 5], [G, 5], [Ab, 5], [A, 5], [Bb, 5], [B, 5],
+  [C, 6], [Db, 6], [D, 6], [Eb, 6], [E, 6], [F, 6], [Gb, 6], [G, 6], [Ab, 6], [A, 6], [Bb, 6], [B, 6],
+  [C, 7], [Db, 7], [D, 7], [Eb, 7], [E, 7], [F, 7], [Gb, 7], [G, 7], [Ab, 7], [A, 7], [Bb, 7], [B, 7],
+  [C, 8]
+];
+var NOTE_STRINGS = NOTES.map(function(n) { return n.join(''); });
+// incidentally, it has 89 entries, rather than 88, because piano keys
+// are 1-indexed. Ab0 is not on a (normal) piano.
 
 // this can actually take inputs in three ways...
 // it can take note, octave, duration, position
-// or it can take frequency, duration, position
+// or it can take number, duration, position
 // or it can take an array of the form:
 //            [note, octave, duration, position]
 function Note(note, octave, duration, position) {
+  var number;
   if(note instanceof Array) {
     position = note[3];
     duration = note[2];
@@ -41,50 +60,67 @@ function Note(note, octave, duration, position) {
     note = note[0];
   }
   if(arguments.length === 3) {
-    this.frequency = note;
-    position = duration;
-    duration = octave;
+    // we have number...
+    number = note;
+    var noteIds = NOTES[note];
+    position = arguments[2];
+    duration = arguments[1];
+    octave = noteIds[1];
+    note = noteIds[0];
   } else {
-    this.frequency = notf(note, octave);
+    console.log([note, octave].join(''), NOTE_STRINGS.indexOf([note,octave].join('')));
+    number = NOTE_STRINGS.indexOf([note, octave].join(''));
   }
+  this.note = note;
+  this.octave = octave;
   this.duration = duration;
   this.position = position;
+  this.number = number;
+  // note: this.buffers is an array on the prototype
+  // we're using the prototype as a place to hold a global
+  // cache of piano notes
+  if(this.buffers[this.number]) {
+    this.buffer = this.buffers[this.number];
+  } else {
+    this.getNote(this.number);
+  }
 }
+Note.prototype.buffers = [];
+Note.prototype.getNote = function(number) {
+  var dfd = $.Deferred();
+  var self = this;
+  var url = '../keys/piano-ff-0' + (number < 10 ? '0' : '') + number.toString() + '.wav';
+  var request = new XMLHttpRequest();
+  request.open('GET', url, true);
+  request.responseType = 'arraybuffer';
+
+  request.onload = function() {
+    context.decodeAudioData(request.response, function(buffer) {
+      self.buffer = self.buffers[number] = buffer;
+      dfd.resolve(buffer);
+    }, function() {
+      dfd.reject();
+    });
+  };
+
+  request.send();
+  return dfd.promise();
+};
 Note.prototype.getData = function(delay) {
   delay = delay === undefined ? 0 : delay;
-  return [this.frequency, this.duration, this.position + delay];
+  return [this.number, this.duration, this.position + delay];
+};
+Note.prototype.play = function(startTime, gain) {
+  console.log('playing ' + noteToString(this.note) + this.octave.toString() + ' at ' + (startTime + this.position));
+  var source = context.createBufferSource();
+  startTime = startTime ? startTime : 0;
+  source.buffer = this.buffer;
+  source.connect(gain ? gain : context.destination);
+
+  source.start(startTime + this.position);
 };
 
 
-
-
-// this is (currently) our musical instrument
-function playFrequency(frequency, duration, position, gain) {
-  // console.log('playing frequency', frequency, duration, position);
-  position = position || 0;
-  var oscillator = context.createOscillator();
-  var compressor = context.createDynamicsCompressor();
-  var damper = context.createWaveShaper();
-
-  gain = gain || context.createGain();
-  oscillator.frequency.value = frequency;
-  compressor.attack.value = 0.01;
-  var n = 65536;
-  var curve = new Float32Array(n), i;
-  for (i=0; i<(n/2); i++)
-    curve[i] = 0.05;
-  for (i=(n/2); i<n; i++)
-      curve[i] = Math.pow(i/(n/2), 2) - 1;
-  damper.curve = curve;
-
-  oscillator.connect(compressor);
-  compressor.connect(damper);
-  damper.connect(gain);
-  gain.connect(context.destination);
-
-  oscillator.start(position);
-  oscillator.stop(position + duration);
-}
 
 
 function Theme(noteArray) {
@@ -190,6 +226,7 @@ function Voice(canon, delay, transform, color) {
   this.setTransform(transform);
   this.gain = context.createGain();
   this.gain.gain.value = 0.5;
+  this.gain.connect(context.destination);
   if(color) { this.color = color; }
 }
 // the repetition factor determines how many times the transformed loop
@@ -217,7 +254,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions * this.repetitionFactor;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i].frequency, loop[i].duration * wholeNote, (loop[i].position + j * this.duration) * wholeNote + time, this.gain);
+      loop[i].play(startTime + j * this.duration + this.delay, this.gain);
     }
   }
 };
@@ -242,12 +279,30 @@ Voice.prototype.getData = function() {
 function Transform() {
   this.functions = [];
 }
-Transform.prototype.shiftPitch = function(steps) {
+// note: this shifts the pitch diatonically (?)
+// if this is used on a note *not* on the diatonic scale it will crash
+Transform.prototype.shiftByTones = function(tones) {
   this.functions.push(function(note) {
-    return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
+    var diatone = DIATONIC.indexOf(note.note), octave = note.octave;
+    var newDiatone = (diatone + tones);
+
+    // if we went off the top or bottom of the scale, we shift an octave appropriately
+    var newOctave = octave + Math.floor(newDiatone / 7);
+
+    // now we can flatten newDiatone to something the array can use...
+    newDiatone = newDiatone % 7;
+    if(newDiatone < 0) { newDiatone += 7; }
+    console.log(diatone, newDiatone, octave, newOctave, DIATONIC[newDiatone] + newOctave);
+    return new Note(DIATONIC[newDiatone], newOctave, note.duration, note.position);
   });
   return this;
 };
+// this won't work...
+Transform.prototype.shiftBySemitones = function(semitones) {
+  this.functions.push(function(note) {
+    return new Note(note.number + semitones, note.duration, note.position);
+  });
+  return this;};
 Transform.prototype.invert = function(center) {
   this.functions.push(function(note) {
     return new Note(center / note.frequency * center, note.duration, note.position);
@@ -265,20 +320,6 @@ Transform.prototype.fn = function() {
   };
 };
 
-// this *returns* a transform function
-function shiftPitch(steps) {
-  return function(note) {
-    // return [ note[0] * Math.pow(2, (steps/12)) ].concat(note.slice(1));
-    return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
-  };
-}
-function invert(center) {
-  return function(note) {
-    return new Note(center / note.frequency * center, note.duration, note.position);
-  };
-}
-
-
 
 
 var BWV1074_notes = ([
@@ -295,16 +336,16 @@ var BWV1074_notes = ([
 
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  ,   shiftPitch(7), '#2368A0'],
-  ['C', 0.5,            null, '#B13631'],
-  ['A', 1  ,  shiftPitch(-3), '#8A6318'],
-  ['D', 1.5, shiftPitch(-10), '#337331']
+  ['G', 0  , new Transform().shiftByTones( 4).fn(), '#2368A0'],
+  ['C', 0.5,                                  null, '#B13631'],
+  ['A', 1  , new Transform().shiftByTones(-2).fn(), '#8A6318'],
+  ['D', 1.5, new Transform().shiftByTones(-6).fn(), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
-  ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
-  ['C', 0.5, new Transform().invert(notf(C,4)).fn()               , '#337331' ],
-  ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
-  ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
+  // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
+  // ['C', 0.5, new Transform().invert(notf(C,4)).fn()               , '#337331' ],
+  // ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
+  // ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
 ]);
 BWV1074.addCanon('mattheson', [
   // oh this is going to be fun to transcribe...
@@ -324,9 +365,8 @@ var xScale = d3.scale.linear()
   .domain([0, 7])
   .range([20, 580]);
 
-var yScale = d3.scale.log()
-  .base(2)
-  .domain([-25, 5].map(ntf))
+var yScale = d3.scale.linear()
+  .domain([22, 55])
   .range([380, 20]);
 
 
@@ -345,7 +385,7 @@ function updateDisplay(canonName) {
     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
     .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
-    .attr('height', yScale(ntf(0)) - yScale(ntf(1)));
+    .attr('height', yScale(38) - yScale(39));
 
   noteData
     // .on('mouseenter', null)
@@ -372,7 +412,7 @@ function updateDisplay(canonName) {
       return 250 + idx * 30 + Math.floor(idx/tL) * 150;
     })
     .attr('y', function(d) { return yScale(d[0]); })
-    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+    .attr('height', yScale(38) - yScale(39))
     .attr('fill', function(d) {
       return d[3].color;
     });
@@ -406,7 +446,7 @@ var stateMachine = new machina.Fsm({
         updateDisplay('walther');
       },
       play : function() {
-        BWV1074.play('walther');
+        BWV1074.play('walther', 3);
       }
     },
     'marpurg' : {
