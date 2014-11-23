@@ -2,23 +2,29 @@
 var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
-var wholeNote = 1.5;
+var wholeNote = 1;
 
 // these are the number of the key of these notes
 // in the zeroth octave
 // obviously, keys below 1 don't exist...
-var C  = -8;
-var Db = -7;
-var D  = -6;
-var Eb = -5;
-var E  = -4;
-var F  = -3;
-var Gb = -2;
-var G  = -1;
-var Ab =  0;
-var A  =  1;
-var Bb =  2;
-var B  =  3;
+var NOTE_IDS = {};
+var B  = NOTE_IDS.B  =  3;
+var Bb = NOTE_IDS.Bb =  2;
+var A  = NOTE_IDS.A  =  1;
+var Ab = NOTE_IDS.Ab =  0;
+var G  = NOTE_IDS.G  = -1;
+var Gb = NOTE_IDS.Gb = -2;
+var F  = NOTE_IDS.F  = -3;
+var E  = NOTE_IDS.E  = -4;
+var Eb = NOTE_IDS.Eb = -5;
+var D  = NOTE_IDS.D  = -6;
+var Db = NOTE_IDS.Db = -7;
+var C  = NOTE_IDS.C  = -8;
+
+// mainly for debugging
+function noteToString(note) {
+  return _.invert(NOTE_IDS)[note];
+}
 
 // so if you want a note from a number, you fetch it out of this array...
 // NOTES[40], for example, will yield you [C, 4] and you can then push
@@ -100,6 +106,7 @@ Note.prototype.getData = function(delay) {
   return [this.number, this.duration, this.position + delay];
 };
 Note.prototype.play = function(startTime, gain) {
+  console.log('playing ' + noteToString(this.note) + this.octave.toString() + ' at ' + (startTime + this.position));
   var source = context.createBufferSource();
   startTime = startTime ? startTime : 0;
   source.buffer = this.buffer;
