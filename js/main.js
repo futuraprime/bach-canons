@@ -277,15 +277,24 @@ Voice.prototype.getData = function() {
 function Transform() {
   this.functions = [];
 }
-// note: this shifts the pitch diatonically
-Transform.prototype.shiftPitch = function(steps) {
+// note: this shifts the pitch diatonically (?)
+// if this is used on a note *not* on the diatonic scale it will crash
+Transform.prototype.shiftByTones = function(tones) {
   this.functions.push(function(note) {
-    var n = note.note, o = note.octave;
-    var minOctaves = Math.floor(Math.abs(steps/7)) * steps/Math.abs(steps);
-    return new Note(note.number + steps, note.duration, note.position);
+    var minOctaves = Math.floor(Math.abs(tones/7)) * tones/Math.abs(tones);
+    var diatone = DIATONIC.indexOf(note.note), octave = note.octave;
+    var newDiatone = diatone + tones;
+    var newOctave = octave + minOctaves;
+    console.log(diatone, newDiatone);
+    return new Note(note.number + tones, note.duration, note.position);
   });
   return this;
 };
+Transform.prototype.shiftBySemitones = function(semitones) {
+  this.functions.push(function(note) {
+    return new Note(note.number + semitones, note.duration, note.position);
+  });
+  return this;};
 Transform.prototype.invert = function(center) {
   this.functions.push(function(note) {
     return new Note(center / note.frequency * center, note.duration, note.position);
@@ -319,10 +328,10 @@ var BWV1074_notes = ([
 
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  , new Transform().shiftPitch(  7).fn(), '#2368A0'],
+  ['G', 0  , new Transform().shiftByTones(  7).fn(), '#2368A0'],
   ['C', 0.5,                                 null, '#B13631'],
-  ['A', 1  , new Transform().shiftPitch( -3).fn(), '#8A6318'],
-  ['D', 1.5, new Transform().shiftPitch(-10).fn(), '#337331']
+  ['A', 1  , new Transform().shiftByTones( -3).fn(), '#8A6318'],
+  ['D', 1.5, new Transform().shiftByTones(-10).fn(), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
   // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
