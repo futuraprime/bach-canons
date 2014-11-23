@@ -242,7 +242,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions * this.repetitionFactor;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      loop[i].play(startTime + j * this.repetitionFactor + this.delay, this.gain);
+      loop[i].play(startTime + j * this.duration + this.delay, this.gain);
     }
   }
 };
@@ -416,7 +416,7 @@ var stateMachine = new machina.Fsm({
         updateDisplay('walther');
       },
       play : function() {
-        BWV1074.play('walther');
+        BWV1074.play('walther', 3);
       }
     },
     'marpurg' : {
