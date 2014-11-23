@@ -20,23 +20,51 @@ var A  =  1;
 var Bb =  2;
 var B  =  3;
 
+// so if you want a note from a number, you fetch it out of this array...
+// NOTES[40], for example, will yield you [C, 4] and you can then push
+// duration and position for it to make a new Note.
+var NOTES = [                                                        [Ab, 0], [A, 0], [Bb, 0], [B, 0],
+  [C, 1], [Db, 1], [D, 1], [Eb, 1], [E, 1], [F, 1], [Gb, 1], [G, 1], [Ab, 1], [A, 1], [Bb, 1], [B, 1],
+  [C, 2], [Db, 2], [D, 2], [Eb, 2], [E, 2], [F, 2], [Gb, 2], [G, 2], [Ab, 2], [A, 2], [Bb, 2], [B, 2],
+  [C, 3], [Db, 3], [D, 3], [Eb, 3], [E, 3], [F, 3], [Gb, 3], [G, 3], [Ab, 3], [A, 3], [Bb, 3], [B, 3],
+  [C, 4], [Db, 4], [D, 4], [Eb, 4], [E, 4], [F, 4], [Gb, 4], [G, 4], [Ab, 4], [A, 4], [Bb, 4], [B, 4],
+  [C, 5], [Db, 5], [D, 5], [Eb, 5], [E, 5], [F, 5], [Gb, 5], [G, 5], [Ab, 5], [A, 5], [Bb, 5], [B, 5],
+  [C, 6], [Db, 6], [D, 6], [Eb, 6], [E, 6], [F, 6], [Gb, 6], [G, 6], [Ab, 6], [A, 6], [Bb, 6], [B, 6],
+  [C, 7], [Db, 7], [D, 7], [Eb, 7], [E, 7], [F, 7], [Gb, 7], [G, 7], [Ab, 7], [A, 7], [Bb, 7], [B, 7],
+  [C, 8]
+];
+// incidentally, it has 89 entries, rather than 88, because piano keys
+// are 1-indexed. Ab0 is not on a (normal) piano.
+
 // this can actually take inputs in three ways...
 // it can take note, octave, duration, position
-// or it can take frequency, duration, position
+// or it can take number, duration, position
 // or it can take an array of the form:
 //            [note, octave, duration, position]
 function Note(note, octave, duration, position) {
+  var number;
   if(note instanceof Array) {
     position = note[3];
     duration = note[2];
     octave = note[1];
     note = note[0];
   }
+  if(arguments.length === 3) {
+    // we have number...
+    number = note;
+    var noteIds = NOTES[note];
+    position = arguments[2];
+    duration = arguments[1];
+    octave = noteIds[1];
+    note = noteIds[0];
+  } else {
+    number = note + 12 * octave;
+  }
   this.note = note;
   this.octave = octave;
   this.duration = duration;
   this.position = position;
-  this.number = note + 12 * octave;
+  this.number = number;
   // note: this.buffers is an array on the prototype
   // we're using the prototype as a place to hold a global
   // cache of piano notes
@@ -214,7 +242,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions * this.repetitionFactor;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      loop[i].play(startTime + j * this.repetitionFactor, this.gain);
+      loop[i].play(startTime + j * this.repetitionFactor + this.delay, this.gain);
     }
   }
 };
@@ -241,7 +269,7 @@ function Transform() {
 }
 Transform.prototype.shiftPitch = function(steps) {
   this.functions.push(function(note) {
-    return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
+    return new Note(note.number + steps, note.duration, note.position);
   });
   return this;
 };
@@ -262,20 +290,6 @@ Transform.prototype.fn = function() {
   };
 };
 
-// this *returns* a transform function
-function shiftPitch(steps) {
-  return function(note) {
-    // return [ note[0] * Math.pow(2, (steps/12)) ].concat(note.slice(1));
-    return new Note(note.frequency * Math.pow(2, steps/12), note.duration, note.position);
-  };
-}
-function invert(center) {
-  return function(note) {
-    return new Note(center / note.frequency * center, note.duration, note.position);
-  };
-}
-
-
 
 
 var BWV1074_notes = ([
@@ -292,10 +306,10 @@ var BWV1074_notes = ([
 
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  ,   shiftPitch(7), '#2368A0'],
-  ['C', 0.5,            null, '#B13631'],
-  ['A', 1  ,  shiftPitch(-3), '#8A6318'],
-  ['D', 1.5, shiftPitch(-10), '#337331']
+  ['G', 0  , new Transform().shiftPitch(  7).fn(), '#2368A0'],
+  ['C', 0.5,                                 null, '#B13631'],
+  ['A', 1  , new Transform().shiftPitch( -3).fn(), '#8A6318'],
+  ['D', 1.5, new Transform().shiftPitch(-10).fn(), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
   // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
@@ -322,7 +336,7 @@ var xScale = d3.scale.linear()
   .range([20, 580]);
 
 var yScale = d3.scale.linear()
-  .domain([30, 60])
+  .domain([22, 55])
   .range([380, 20]);
 
 
@@ -340,7 +354,7 @@ function updateDisplay(canonName) {
     .attr('class', 'note')
     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
-    .attr('y', function(d, i) { console.log(themeData[i % tL]); return yScale(themeData[i % tL][0]); })
+    .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
     .attr('height', yScale(38) - yScale(39));
 
   noteData
@@ -368,7 +382,7 @@ function updateDisplay(canonName) {
       return 250 + idx * 30 + Math.floor(idx/tL) * 150;
     })
     .attr('y', function(d) { return yScale(d[0]); })
-    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+    .attr('height', yScale(38) - yScale(39))
     .attr('fill', function(d) {
       return d[3].color;
     });
