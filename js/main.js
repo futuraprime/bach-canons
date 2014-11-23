@@ -8,18 +8,18 @@ var wholeNote = 1;
 // in the zeroth octave
 // obviously, keys below 1 don't exist...
 var NOTE_IDS = {};
-var B  = NOTE_IDS.B  =  3;
-var Bb = NOTE_IDS.Bb =  2;
-var A  = NOTE_IDS.A  =  1;
-var Ab = NOTE_IDS.Ab =  0;
-var G  = NOTE_IDS.G  = -1;
-var Gb = NOTE_IDS.Gb = -2;
-var F  = NOTE_IDS.F  = -3;
-var E  = NOTE_IDS.E  = -4;
-var Eb = NOTE_IDS.Eb = -5;
-var D  = NOTE_IDS.D  = -6;
-var Db = NOTE_IDS.Db = -7;
-var C  = NOTE_IDS.C  = -8;
+var B  = NOTE_IDS.B  = 'B';
+var Bb = NOTE_IDS.Bb = 'Bb';
+var A  = NOTE_IDS.A  = 'A';
+var Ab = NOTE_IDS.Ab = 'Ab';
+var G  = NOTE_IDS.G  = 'G';
+var Gb = NOTE_IDS.Gb = 'Gb';
+var F  = NOTE_IDS.F  = 'F';
+var E  = NOTE_IDS.E  = 'E';
+var Eb = NOTE_IDS.Eb = 'Eb';
+var D  = NOTE_IDS.D  = 'D';
+var Db = NOTE_IDS.Db = 'Db';
+var C  = NOTE_IDS.C  = 'C';
 
 // mainly for debugging
 function noteToString(note) {
@@ -42,6 +42,7 @@ var NOTES = [                                                        [Ab, 0], [A
   [C, 7], [Db, 7], [D, 7], [Eb, 7], [E, 7], [F, 7], [Gb, 7], [G, 7], [Ab, 7], [A, 7], [Bb, 7], [B, 7],
   [C, 8]
 ];
+var NOTE_STRINGS = NOTES.map(function(n) { return n.join(''); });
 // incidentally, it has 89 entries, rather than 88, because piano keys
 // are 1-indexed. Ab0 is not on a (normal) piano.
 
@@ -67,7 +68,8 @@ function Note(note, octave, duration, position) {
     octave = noteIds[1];
     note = noteIds[0];
   } else {
-    number = note + 12 * octave;
+    console.log([note, octave].join(''), NOTE_STRINGS.indexOf([note,octave].join('')));
+    number = NOTE_STRINGS.indexOf([note, octave].join(''));
   }
   this.note = note;
   this.octave = octave;
@@ -281,15 +283,21 @@ function Transform() {
 // if this is used on a note *not* on the diatonic scale it will crash
 Transform.prototype.shiftByTones = function(tones) {
   this.functions.push(function(note) {
-    var minOctaves = Math.floor(Math.abs(tones/7)) * tones/Math.abs(tones);
     var diatone = DIATONIC.indexOf(note.note), octave = note.octave;
-    var newDiatone = diatone + tones;
-    var newOctave = octave + minOctaves;
-    console.log(diatone, newDiatone);
-    return new Note(note.number + tones, note.duration, note.position);
+    var newDiatone = (diatone + tones);
+
+    // if we went off the top or bottom of the scale, we shift an octave appropriately
+    var newOctave = octave + Math.floor(newDiatone / 7);
+
+    // now we can flatten newDiatone to something the array can use...
+    newDiatone = newDiatone % 7;
+    if(newDiatone < 0) { newDiatone += 7; }
+    console.log(diatone, newDiatone, octave, newOctave, DIATONIC[newDiatone] + newOctave);
+    return new Note(DIATONIC[newDiatone], newOctave, note.duration, note.position);
   });
   return this;
 };
+// this won't work...
 Transform.prototype.shiftBySemitones = function(semitones) {
   this.functions.push(function(note) {
     return new Note(note.number + semitones, note.duration, note.position);
@@ -328,10 +336,10 @@ var BWV1074_notes = ([
 
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  , new Transform().shiftByTones(  7).fn(), '#2368A0'],
-  ['C', 0.5,                                 null, '#B13631'],
-  ['A', 1  , new Transform().shiftByTones( -3).fn(), '#8A6318'],
-  ['D', 1.5, new Transform().shiftByTones(-10).fn(), '#337331']
+  ['G', 0  , new Transform().shiftByTones( 4).fn(), '#2368A0'],
+  ['C', 0.5,                                  null, '#B13631'],
+  ['A', 1  , new Transform().shiftByTones(-2).fn(), '#8A6318'],
+  ['D', 1.5, new Transform().shiftByTones(-6).fn(), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
   // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
