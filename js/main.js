@@ -8,23 +8,18 @@ var wholeNote = 1;
 // in the zeroth octave
 // obviously, keys below 1 don't exist...
 var NOTE_IDS = {};
-var B  = NOTE_IDS.B  =  3;
-var Bb = NOTE_IDS.Bb =  2;
-var A  = NOTE_IDS.A  =  1;
-var Ab = NOTE_IDS.Ab =  0;
-var G  = NOTE_IDS.G  = -1;
-var Gb = NOTE_IDS.Gb = -2;
-var F  = NOTE_IDS.F  = -3;
-var E  = NOTE_IDS.E  = -4;
-var Eb = NOTE_IDS.Eb = -5;
-var D  = NOTE_IDS.D  = -6;
-var Db = NOTE_IDS.Db = -7;
-var C  = NOTE_IDS.C  = -8;
-
-// mainly for debugging
-function noteToString(note) {
-  return _.invert(NOTE_IDS)[note];
-}
+var B  = NOTE_IDS.B  = 'B';
+var Bb = NOTE_IDS.Bb = 'Bb';
+var A  = NOTE_IDS.A  = 'A';
+var Ab = NOTE_IDS.Ab = 'Ab';
+var G  = NOTE_IDS.G  = 'G';
+var Gb = NOTE_IDS.Gb = 'Gb';
+var F  = NOTE_IDS.F  = 'F';
+var E  = NOTE_IDS.E  = 'E';
+var Eb = NOTE_IDS.Eb = 'Eb';
+var D  = NOTE_IDS.D  = 'D';
+var Db = NOTE_IDS.Db = 'Db';
+var C  = NOTE_IDS.C  = 'C';
 
 // so if you want a note from a number, you fetch it out of this array...
 // NOTES[40], for example, will yield you [C, 4] and you can then push
@@ -56,21 +51,18 @@ function Note(note, octave, duration, position) {
     note = note[0];
   }
   if(arguments.length === 3) {
-    // we have number...
-    number = note;
-    var noteIds = NOTES[note];
+    // we've received a teoria!
     position = arguments[2];
     duration = arguments[1];
-    octave = noteIds[1];
-    note = noteIds[0];
+    this.teoria = arguments[0];
   } else {
-    number = note + 12 * octave;
+    this.teoria = teoria.note(note + octave);
   }
   this.note = note;
   this.octave = octave;
   this.duration = duration;
   this.position = position;
-  this.number = number;
+  this.number = this.teoria.key();
   // note: this.buffers is an array on the prototype
   // we're using the prototype as a place to hold a global
   // cache of piano notes
@@ -106,7 +98,7 @@ Note.prototype.getData = function(delay) {
   return [this.number, this.duration, this.position + delay];
 };
 Note.prototype.play = function(startTime, gain) {
-  console.log('playing ' + noteToString(this.note) + this.octave.toString() + ' at ' + (startTime + this.position));
+  console.log('playing ' + this.teoria.toString() + ' at ' + (startTime + this.position));
   var source = context.createBufferSource();
   startTime = startTime ? startTime : 0;
   source.buffer = this.buffer;
@@ -274,9 +266,9 @@ Voice.prototype.getData = function() {
 function Transform() {
   this.functions = [];
 }
-Transform.prototype.shiftPitch = function(steps) {
+Transform.prototype.shiftPitch = function(interval) {
   this.functions.push(function(note) {
-    return new Note(note.number + steps, note.duration, note.position);
+    return new Note(note.teoria.interval(interval), note.duration, note.position);
   });
   return this;
 };
@@ -313,10 +305,10 @@ var BWV1074_notes = ([
 
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  , new Transform().shiftPitch(  7).fn(), '#2368A0'],
-  ['C', 0.5,                                 null, '#B13631'],
-  ['A', 1  , new Transform().shiftPitch( -3).fn(), '#8A6318'],
-  ['D', 1.5, new Transform().shiftPitch(-10).fn(), '#337331']
+  ['G', 0  , new Transform().shiftPitch( 'P5').fn(), '#2368A0'],
+  ['C', 0.5,                                   null, '#B13631'],
+  ['A', 1  , new Transform().shiftPitch('m-3').fn(), '#8A6318'],
+  ['D', 1.5, new Transform().shiftPitch('m-7').fn(), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
   // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
