@@ -266,11 +266,14 @@ Voice.prototype.getData = function() {
 function Transform() {
   this.functions = [];
 }
-Transform.prototype.shiftPitch = function(interval) {
+Transform.prototype.shiftByInterval = function(interval) {
   this.functions.push(function(note) {
     return new Note(note.teoria.interval(interval), note.duration, note.position);
   });
   return this;
+};
+Transform.prototype.shiftDiatonic = function(steps) {
+
 };
 Transform.prototype.invert = function(center) {
   this.functions.push(function(note) {
@@ -305,10 +308,10 @@ var BWV1074_notes = ([
 
 var BWV1074 = new Theme(BWV1074_notes);
 BWV1074.addCanon('walther', [
-  ['G', 0  , new Transform().shiftPitch( 'P5').fn(), '#2368A0'],
+  ['G', 0  , new Transform().shiftByInterval( 'P5').fn(), '#2368A0'],
   ['C', 0.5,                                   null, '#B13631'],
-  ['A', 1  , new Transform().shiftPitch('m-3').fn(), '#8A6318'],
-  ['D', 1.5, new Transform().shiftPitch('m-7').fn(), '#337331']
+  ['A', 1  , new Transform().shiftByInterval('m-3').fn(), '#8A6318'],
+  ['D', 1.5, new Transform().shiftByInterval('m-7').fn(), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
   // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
