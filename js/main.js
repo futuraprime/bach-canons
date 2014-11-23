@@ -8,16 +8,16 @@ var wholeNote = 1.5;
 // in the zeroth octave
 // obviously, keys below 1 don't exist...
 var C  = -8;
-var Cs = -7;
+var Db = -7;
 var D  = -6;
-var Ds = -5;
+var Eb = -5;
 var E  = -4;
 var F  = -3;
-var Fs = -2;
+var Gb = -2;
 var G  = -1;
-var Gs =  0;
+var Ab =  0;
 var A  =  1;
-var As =  2;
+var Bb =  2;
 var B  =  3;
 
 // this can actually take inputs in three ways...
@@ -69,7 +69,7 @@ Note.prototype.getNote = function(number) {
 };
 Note.prototype.getData = function(delay) {
   delay = delay === undefined ? 0 : delay;
-  return [this.frequency, this.duration, this.position + delay];
+  return [this.number, this.duration, this.position + delay];
 };
 Note.prototype.play = function(startTime, gain) {
   var source = context.createBufferSource();
@@ -317,62 +317,61 @@ var interactive = d3.select('#interactive')
   .attr('width', 600);
 
 // these domains are total guesses...
-// var xScale = d3.scale.linear()
-//   .domain([0, 7])
-//   .range([20, 580]);
+var xScale = d3.scale.linear()
+  .domain([0, 7])
+  .range([20, 580]);
 
-// var yScale = d3.scale.log()
-//   .base(2)
-//   .domain([-25, 5].map(ntf))
-//   .range([380, 20]);
+var yScale = d3.scale.linear()
+  .domain([30, 60])
+  .range([380, 20]);
 
 
 function updateDisplay(canonName) {
-//   var notes = interactive.selectAll('.note');
-//   var noteData = notes.data(BWV1074.getData(canonName));
+  var notes = interactive.selectAll('.note');
+  var noteData = notes.data(BWV1074.getData(canonName));
 
-//   var themeData = BWV1074.getData();
-//   var tL = themeData.length;
+  var themeData = BWV1074.getData();
+  var tL = themeData.length;
 
-//   noteData.exit().remove();
+  noteData.exit().remove();
 
-//   noteData.enter()
-//     .append('svg:rect')
-//     .attr('class', 'note')
-//     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
-//     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
-//     .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
-//     .attr('height', yScale(ntf(0)) - yScale(ntf(1)));
+  noteData.enter()
+    .append('svg:rect')
+    .attr('class', 'note')
+    .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
+    .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
+    .attr('y', function(d, i) { console.log(themeData[i % tL]); return yScale(themeData[i % tL][0]); })
+    .attr('height', yScale(38) - yScale(39));
 
-//   noteData
-//     // .on('mouseenter', null)
-//     // .on('mouseleave', null)
-//     .on('mouseenter', function(d) {
-//       console.log('ze bloop!!', d[3]);
-//       BWV1074.getCanon(canonName).adjustGain(0.1);
-//       d[3].adjustGain(0.4);
-//       notes.attr('opacity', function(dPrime) {
-//         return dPrime[3] === d[3] ? 1 : 0.25;
-//       });
-//     })
-//     .on('mouseleave', function(d) {
-//       BWV1074.getCanon(canonName).adjustGain(0.3);
-//       notes.attr('opacity', 1);
-//     })
-//     .transition().duration(250)
-//     .delay(function(d, idx) {
-//       return idx * 30 + Math.floor(idx/tL) * 150;
-//     })
-//     .attr('x', function(d) { return xScale(d[2]); })
-//     .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
-//     .transition().delay(function(d, idx) {
-//       return 250 + idx * 30 + Math.floor(idx/tL) * 150;
-//     })
-//     .attr('y', function(d) { return yScale(d[0]); })
-//     .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
-//     .attr('fill', function(d) {
-//       return d[3].color;
-//     });
+  noteData
+    // .on('mouseenter', null)
+    // .on('mouseleave', null)
+    .on('mouseenter', function(d) {
+      console.log('ze bloop!!', d[3]);
+      BWV1074.getCanon(canonName).adjustGain(0.1);
+      d[3].adjustGain(0.4);
+      notes.attr('opacity', function(dPrime) {
+        return dPrime[3] === d[3] ? 1 : 0.25;
+      });
+    })
+    .on('mouseleave', function(d) {
+      BWV1074.getCanon(canonName).adjustGain(0.3);
+      notes.attr('opacity', 1);
+    })
+    .transition().duration(250)
+    .delay(function(d, idx) {
+      return idx * 30 + Math.floor(idx/tL) * 150;
+    })
+    .attr('x', function(d) { return xScale(d[2]); })
+    .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
+    .transition().delay(function(d, idx) {
+      return 250 + idx * 30 + Math.floor(idx/tL) * 150;
+    })
+    .attr('y', function(d) { return yScale(d[0]); })
+    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+    .attr('fill', function(d) {
+      return d[3].color;
+    });
 }
 
 
