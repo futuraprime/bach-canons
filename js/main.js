@@ -4,29 +4,21 @@ var context = new AudioContext();
 
 var wholeNote = 1.5;
 
-// steps is steps from A4
-// ntf = note to frequency
-function ntf(steps) {
-  return 440 * Math.pow(2, (steps/12));
-}
-var C  = ntf(-9);
-var Cs = ntf(-8);
-var D  = ntf(-7);
-var Ds = ntf(-6);
-var E  = ntf(-5);
-var F  = ntf(-4);
-var Fs = ntf(-3);
-var G  = ntf(-2);
-var Gs = ntf(-1);
-var A  = ntf( 0);
-var As = ntf( 1);
-var B  = ntf( 2);
-
-// note, octave to frequency
-// "note" is actually a frequency (from above)
-function notf(note, octave) {
-  return note * Math.pow(2, octave - 4);
-}
+// these are the number of the key of these notes
+// in the zeroth octave
+// obviously, keys below 1 don't exist...
+var C  = -8;
+var Cs = -7;
+var D  = -6;
+var Ds = -5;
+var E  = -4;
+var F  = -3;
+var Fs = -2;
+var G  = -1;
+var Gs =  0;
+var A  =  1;
+var As =  2;
+var B  =  3;
 
 // this can actually take inputs in three ways...
 // it can take note, octave, duration, position
@@ -40,51 +32,55 @@ function Note(note, octave, duration, position) {
     octave = note[1];
     note = note[0];
   }
-  if(arguments.length === 3) {
-    this.frequency = note;
-    position = duration;
-    duration = octave;
-  } else {
-    this.frequency = notf(note, octave);
-  }
+  this.note = note;
+  this.octave = octave;
   this.duration = duration;
   this.position = position;
+  this.number = note + 12 * octave;
+  // note: this.buffers is an array on the prototype
+  // we're using the prototype as a place to hold a global
+  // cache of piano notes
+  if(this.buffers[this.number]) {
+    this.buffer = this.buffers[this.number];
+  } else {
+    this.getNote(this.number);
+  }
 }
+Note.prototype.buffers = [];
+Note.prototype.getNote = function(number) {
+  var dfd = $.Deferred();
+  var self = this;
+  var url = '../keys/piano-ff-0' + (number < 10 ? '0' : '') + number.toString() + '.wav';
+  var request = new XMLHttpRequest();
+  request.open('GET', url, true);
+  request.responseType = 'arraybuffer';
+
+  request.onload = function() {
+    context.decodeAudioData(request.response, function(buffer) {
+      self.buffer = self.buffers[number] = buffer;
+      dfd.resolve(buffer);
+    }, function() {
+      dfd.reject();
+    });
+  };
+
+  request.send();
+  return dfd.promise();
+};
 Note.prototype.getData = function(delay) {
   delay = delay === undefined ? 0 : delay;
   return [this.frequency, this.duration, this.position + delay];
 };
+Note.prototype.play = function(startTime, gain) {
+  var source = context.createBufferSource();
+  startTime = startTime ? startTime : 0;
+  source.buffer = this.buffer;
+  source.connect(gain ? gain : context.destination);
+
+  source.start(startTime + this.position);
+};
 
 
-
-
-// this is (currently) our musical instrument
-function playFrequency(frequency, duration, position, gain) {
-  // console.log('playing frequency', frequency, duration, position);
-  position = position || 0;
-  var oscillator = context.createOscillator();
-  var compressor = context.createDynamicsCompressor();
-  var damper = context.createWaveShaper();
-
-  gain = gain || context.createGain();
-  oscillator.frequency.value = frequency;
-  compressor.attack.value = 0.01;
-  var n = 65536;
-  var curve = new Float32Array(n), i;
-  for (i=0; i<(n/2); i++)
-    curve[i] = 0.05;
-  for (i=(n/2); i<n; i++)
-      curve[i] = Math.pow(i/(n/2), 2) - 1;
-  damper.curve = curve;
-
-  oscillator.connect(compressor);
-  compressor.connect(damper);
-  damper.connect(gain);
-  gain.connect(context.destination);
-
-  oscillator.start(position);
-  oscillator.stop(position + duration);
-}
 
 
 function Theme(noteArray) {
@@ -190,6 +186,7 @@ function Voice(canon, delay, transform, color) {
   this.setTransform(transform);
   this.gain = context.createGain();
   this.gain.gain.value = 0.5;
+  this.gain.connect(context.destination);
   if(color) { this.color = color; }
 }
 // the repetition factor determines how many times the transformed loop
@@ -217,7 +214,7 @@ Voice.prototype.play = function(startTime, repetitions) {
   var loop = this.loop;    // note: this is the TRANSFORMED loop
   for(var j=0;j<repetitions * this.repetitionFactor;++j) {
     for(var i=0,l=loop.length;i<l;++i) {
-      playFrequency(loop[i].frequency, loop[i].duration * wholeNote, (loop[i].position + j * this.duration) * wholeNote + time, this.gain);
+      loop[i].play(startTime + j * this.repetitionFactor, this.gain);
     }
   }
 };
@@ -301,10 +298,10 @@ BWV1074.addCanon('walther', [
   ['D', 1.5, shiftPitch(-10), '#337331']
 ]);
 BWV1074.addCanon('marpurg', [
-  ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
-  ['C', 0.5, new Transform().invert(notf(C,4)).fn()               , '#337331' ],
-  ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
-  ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
+  // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), '#B13631' ],
+  // ['C', 0.5, new Transform().invert(notf(C,4)).fn()               , '#337331' ],
+  // ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), '#2368A0' ],
+  // ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), '#8A6318' ]
 ]);
 BWV1074.addCanon('mattheson', [
   // oh this is going to be fun to transcribe...
@@ -320,62 +317,62 @@ var interactive = d3.select('#interactive')
   .attr('width', 600);
 
 // these domains are total guesses...
-var xScale = d3.scale.linear()
-  .domain([0, 7])
-  .range([20, 580]);
+// var xScale = d3.scale.linear()
+//   .domain([0, 7])
+//   .range([20, 580]);
 
-var yScale = d3.scale.log()
-  .base(2)
-  .domain([-25, 5].map(ntf))
-  .range([380, 20]);
+// var yScale = d3.scale.log()
+//   .base(2)
+//   .domain([-25, 5].map(ntf))
+//   .range([380, 20]);
 
 
 function updateDisplay(canonName) {
-  var notes = interactive.selectAll('.note');
-  var noteData = notes.data(BWV1074.getData(canonName));
+//   var notes = interactive.selectAll('.note');
+//   var noteData = notes.data(BWV1074.getData(canonName));
 
-  var themeData = BWV1074.getData();
-  var tL = themeData.length;
+//   var themeData = BWV1074.getData();
+//   var tL = themeData.length;
 
-  noteData.exit().remove();
+//   noteData.exit().remove();
 
-  noteData.enter()
-    .append('svg:rect')
-    .attr('class', 'note')
-    .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
-    .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
-    .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
-    .attr('height', yScale(ntf(0)) - yScale(ntf(1)));
+//   noteData.enter()
+//     .append('svg:rect')
+//     .attr('class', 'note')
+//     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
+//     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
+//     .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
+//     .attr('height', yScale(ntf(0)) - yScale(ntf(1)));
 
-  noteData
-    // .on('mouseenter', null)
-    // .on('mouseleave', null)
-    .on('mouseenter', function(d) {
-      console.log('ze bloop!!', d[3]);
-      BWV1074.getCanon(canonName).adjustGain(0.1);
-      d[3].adjustGain(0.4);
-      notes.attr('opacity', function(dPrime) {
-        return dPrime[3] === d[3] ? 1 : 0.25;
-      });
-    })
-    .on('mouseleave', function(d) {
-      BWV1074.getCanon(canonName).adjustGain(0.3);
-      notes.attr('opacity', 1);
-    })
-    .transition().duration(250)
-    .delay(function(d, idx) {
-      return idx * 30 + Math.floor(idx/tL) * 150;
-    })
-    .attr('x', function(d) { return xScale(d[2]); })
-    .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
-    .transition().delay(function(d, idx) {
-      return 250 + idx * 30 + Math.floor(idx/tL) * 150;
-    })
-    .attr('y', function(d) { return yScale(d[0]); })
-    .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
-    .attr('fill', function(d) {
-      return d[3].color;
-    });
+//   noteData
+//     // .on('mouseenter', null)
+//     // .on('mouseleave', null)
+//     .on('mouseenter', function(d) {
+//       console.log('ze bloop!!', d[3]);
+//       BWV1074.getCanon(canonName).adjustGain(0.1);
+//       d[3].adjustGain(0.4);
+//       notes.attr('opacity', function(dPrime) {
+//         return dPrime[3] === d[3] ? 1 : 0.25;
+//       });
+//     })
+//     .on('mouseleave', function(d) {
+//       BWV1074.getCanon(canonName).adjustGain(0.3);
+//       notes.attr('opacity', 1);
+//     })
+//     .transition().duration(250)
+//     .delay(function(d, idx) {
+//       return idx * 30 + Math.floor(idx/tL) * 150;
+//     })
+//     .attr('x', function(d) { return xScale(d[2]); })
+//     .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
+//     .transition().delay(function(d, idx) {
+//       return 250 + idx * 30 + Math.floor(idx/tL) * 150;
+//     })
+//     .attr('y', function(d) { return yScale(d[0]); })
+//     .attr('height', yScale(ntf(0)) - yScale(ntf(1)))
+//     .attr('fill', function(d) {
+//       return d[3].color;
+//     });
 }
 
 
