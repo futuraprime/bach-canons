@@ -100,6 +100,7 @@ Note.prototype.getNote = function(number) {
       console.log('got buffer for', self.note + self.octave.toString());
       dfd.resolve(buffer);
     }, function() {
+      console.log('no joy with buffer for', self.note + self.octave.toString());
       dfd.reject();
     });
   };
