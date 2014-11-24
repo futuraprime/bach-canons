@@ -68,7 +68,6 @@ function Note(note, octave, duration, position) {
     octave = noteIds[1];
     note = noteIds[0];
   } else {
-    console.log([note, octave].join(''), NOTE_STRINGS.indexOf([note,octave].join('')));
     number = NOTE_STRINGS.indexOf([note, octave].join(''));
   }
   this.note = note;
@@ -111,7 +110,6 @@ Note.prototype.getData = function(delay) {
   return [this.number, this.duration, this.position + delay];
 };
 Note.prototype.play = function(startTime, gain) {
-  console.log('playing ' + noteToString(this.note) + this.octave.toString() + ' at ' + (startTime + this.position));
   var source = context.createBufferSource();
   startTime = startTime ? startTime : 0;
   source.buffer = this.buffer;
@@ -327,7 +325,6 @@ Transform.prototype.shiftByTones = function(tones) {
     // now we can flatten newDiatone to something the array can use...
     newDiatone = newDiatone % 7;
     if(newDiatone < 0) { newDiatone += 7; }
-    console.log(diatone, newDiatone, octave, newOctave, DIATONIC[newDiatone] + newOctave);
     return new Note(DIATONIC[newDiatone], newOctave, note.duration, note.position);
   });
   return this;
@@ -394,10 +391,6 @@ BWV1074.addCanon('marpurg', [
   ['B', new Voice([
     [B, 4, 0.5], [F, 4, 1.0], [A, 4, 0.5], [G, 4, 1], [B, 4, 0.5], [A, 4, 0.5], [C, 5, 0.75], [D, 5, 0.125], [C, 5, 0.125]
     ], 1.5, null, green)]
-  // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), red ],
-  // ['C', 0.5, new Transform().invert(notf(C,4)).fn()               ,  green ],
-  // ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), blue ],
-  // ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), yellow ]
 ]);
 BWV1074.addCanon('mattheson', [
   // oh this is going to be fun to transcribe...
@@ -474,7 +467,7 @@ function updateDisplay(canonName) {
 
     // ok, now is time for some crazy fancy transitions...
     // first, we fade in the elements, still in their theme positions
-    .transition().duration(0)
+    .transition().duration(100)
     .delay(function(d, idx) {
       return Math.floor(idx/tL) * voiceDelay;
     })
