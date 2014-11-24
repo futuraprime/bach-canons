@@ -68,7 +68,6 @@ function Note(note, octave, duration, position) {
     octave = noteIds[1];
     note = noteIds[0];
   } else {
-    console.log([note, octave].join(''), NOTE_STRINGS.indexOf([note,octave].join('')));
     number = NOTE_STRINGS.indexOf([note, octave].join(''));
   }
   this.note = note;
@@ -111,7 +110,6 @@ Note.prototype.getData = function(delay) {
   return [this.number, this.duration, this.position + delay];
 };
 Note.prototype.play = function(startTime, gain) {
-  console.log('playing ' + noteToString(this.note) + this.octave.toString() + ' at ' + (startTime + this.position));
   var source = context.createBufferSource();
   startTime = startTime ? startTime : 0;
   source.buffer = this.buffer;
@@ -327,7 +325,6 @@ Transform.prototype.shiftByTones = function(tones) {
     // now we can flatten newDiatone to something the array can use...
     newDiatone = newDiatone % 7;
     if(newDiatone < 0) { newDiatone += 7; }
-    console.log(diatone, newDiatone, octave, newOctave, DIATONIC[newDiatone] + newOctave);
     return new Note(DIATONIC[newDiatone], newOctave, note.duration, note.position);
   });
   return this;
@@ -394,10 +391,6 @@ BWV1074.addCanon('marpurg', [
   ['B', new Voice([
     [B, 4, 0.5], [F, 4, 1.0], [A, 4, 0.5], [G, 4, 1], [B, 4, 0.5], [A, 4, 0.5], [C, 5, 0.75], [D, 5, 0.125], [C, 5, 0.125]
     ], 1.5, null, green)]
-  // ['F', 0  , new Transform().invert(notf(C,4)).shiftPitch(-9).fn(), red ],
-  // ['C', 0.5, new Transform().invert(notf(C,4)).fn()               ,  green ],
-  // ['E', 1  , new Transform().invert(notf(C,4)).shiftPitch( 2).fn(), blue ],
-  // ['B', 1.5, new Transform().invert(notf(C,4)).shiftPitch(11).fn(), yellow ]
 ]);
 BWV1074.addCanon('mattheson', [
   // oh this is going to be fun to transcribe...
@@ -423,13 +416,29 @@ var yScale = d3.scale.linear()
 
 
 function updateDisplay(canonName) {
+  // we want all the voices to show up as transformations of the
+  // theme, so we're going to cut out the old one...
+  interactive.selectAll('.note')
+    // lose the .note class so these don't get selected...
+    .attr('class', 'removing')
+    .transition()
+    .duration(100)
+    .style('opacity', '0')
+    .delay(100)
+    .remove();
+
   var notes = interactive.selectAll('.note');
+
   var noteData = notes.data(BWV1074.getData(canonName));
 
   var themeData = BWV1074.getData();
   var tL = themeData.length;
 
-  noteData.exit().remove();
+  // this should actually be a no-op, since we already removed all
+  // of these, above
+  // noteData.exit().remove();
+
+  var voiceDelay = 500; // milliseconds
 
   noteData.enter()
     .append('svg:rect')
@@ -437,7 +446,8 @@ function updateDisplay(canonName) {
     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
     .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
-    .attr('height', yScale(38) - yScale(39));
+    .attr('height', yScale(38) - yScale(39))
+    .style('opacity', 0);
 
   noteData
     // .on('mouseenter', null)
@@ -454,20 +464,35 @@ function updateDisplay(canonName) {
       BWV1074.getCanon(canonName).adjustGain(0.3);
       notes.attr('opacity', 1);
     })
+
+    // ok, now is time for some crazy fancy transitions...
+    // first, we fade in the elements, still in their theme positions
+    .transition().duration(100)
+    .delay(function(d, idx) {
+      return Math.floor(idx/tL) * voiceDelay;
+    })
+    .style('opacity', 1)
+
+
+    // next, we move them horizontally, including any scaling that happens
+    // in the horizontal direction
     .transition().duration(250)
     .delay(function(d, idx) {
-      return idx * 30 + Math.floor(idx/tL) * 150;
+      return 110 + Math.floor(idx/tL) * voiceDelay;
+    })
+    .style('fill', function(d) {
+      return d[3].color;
     })
     .attr('x', function(d) { return xScale(d[2]); })
     .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
-    .transition().delay(function(d, idx) {
-      return 250 + idx * 30 + Math.floor(idx/tL) * 150;
+
+
+    // finally, we move them up or down, and invert them if needed.
+    .transition().duration(250).delay(function(d, idx) {
+      return 370 + Math.floor(idx/tL) * voiceDelay;
     })
     .attr('y', function(d) { return yScale(d[0]); })
-    .attr('height', yScale(38) - yScale(39))
-    .attr('fill', function(d) {
-      return d[3].color;
-    });
+    .attr('height', yScale(38) - yScale(39));
 }
 
 
@@ -506,7 +531,7 @@ var stateMachine = new machina.Fsm({
         updateDisplay('marpurg');
       },
       play : function() {
-        BWV1074.play('marpurg');
+        BWV1074.play('marpurg', 3);
       }
     }
   }
