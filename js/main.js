@@ -99,8 +99,8 @@ Note.prototype.getNote = function(number) {
       self.buffer = self.buffers[number] = buffer;
       console.log('got buffer for', self.note + self.octave.toString());
       dfd.resolve(buffer);
-    }, function() {
-      console.log('no joy with buffer for', self.note + self.octave.toString());
+    }, function(err) {
+      console.log('no joy with buffer for', self.note + self.octave.toString(), err);
       dfd.reject();
     });
   };
