@@ -423,7 +423,10 @@ var yScale = d3.scale.linear()
 
 
 function updateDisplay(canonName) {
+  // we want all the voices to show up as transformations of the
+  // theme, so we're going to cut out the old one...
   interactive.selectAll('.note')
+    // lose the .note class so these don't get selected...
     .attr('class', 'removing')
     .transition()
     .duration(100)
@@ -438,7 +441,11 @@ function updateDisplay(canonName) {
   var themeData = BWV1074.getData();
   var tL = themeData.length;
 
-  noteData.exit().remove();
+  // this should actually be a no-op, since we already removed all
+  // of these, above
+  // noteData.exit().remove();
+
+  var voiceDelay = 500; // milliseconds
 
   noteData.enter()
     .append('svg:rect')
@@ -446,7 +453,8 @@ function updateDisplay(canonName) {
     .attr('x', function(d, i) { return xScale(themeData[i % tL][2]); })
     .attr('width', function(d, i) { return xScale(themeData[i % tL][1]) - xScale(0); })
     .attr('y', function(d, i) { return yScale(themeData[i % tL][0]); })
-    .attr('height', yScale(38) - yScale(39));
+    .attr('height', yScale(38) - yScale(39))
+    .style('opacity', 0);
 
   noteData
     // .on('mouseenter', null)
@@ -463,18 +471,32 @@ function updateDisplay(canonName) {
       BWV1074.getCanon(canonName).adjustGain(0.3);
       notes.attr('opacity', 1);
     })
+
+    // ok, now is time for some crazy fancy transitions...
+    // first, we fade in the elements, still in their theme positions
+    .transition().duration(0)
+    .delay(function(d, idx) {
+      return Math.floor(idx/tL) * voiceDelay;
+    })
+    .style('opacity', 1)
+
+
+    // next, we move them horizontally, including any scaling that happens
+    // in the horizontal direction
     .transition().duration(250)
+    .delay(function(d, idx) {
+      return 110 + Math.floor(idx/tL) * voiceDelay;
+    })
     .style('fill', function(d) {
       return d[3].color;
     })
-    .delay(function(d, idx) {
-      // what we actually want is something that says which voice they're in...
-      return idx * 30 + Math.floor(idx/tL) * 150;
-    })
     .attr('x', function(d) { return xScale(d[2]); })
     .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
-    .transition().delay(function(d, idx) {
-      return 250 + idx * 30 + Math.floor(idx/tL) * 150;
+
+
+    // finally, we move them up or down, and invert them if needed.
+    .transition().duration(250).delay(function(d, idx) {
+      return 370 + Math.floor(idx/tL) * voiceDelay;
     })
     .attr('y', function(d) { return yScale(d[0]); })
     .attr('height', yScale(38) - yScale(39));
