@@ -200,6 +200,7 @@ Canon.prototype.removeVoice = function(name) {
 };
 Canon.prototype.play = function(repetitions) {
   var time = context.currentTime + 0.1;
+  silenceVoices(); // stop other currently playing things
   for(var k in this.voices) {
     this.voices[k].play(time, repetitions);
   }
@@ -247,7 +248,9 @@ function Voice(canon, delay, transform, color) {
   this.gain.gain.value = 0.5;
   this.gain.connect(context.destination);
   if(color) { this.color = color; }
+  this.voices.push(this);
 }
+Voice.prototype.voices = [];
 // the repetition factor determines how many times the transformed loop
 // needs to be played in a 'single' loop. This can be less than one, which
 // could cause problems
@@ -268,6 +271,14 @@ Voice.prototype.setDelay = function(delay) {
 };
 Voice.prototype.play = function(startTime, repetitions) {
   this.startTime = startTime;
+
+  // we switch to a new gain node here, shutting off the old one to end
+  // previous repetitions
+  this.gain.gain.value = 0;
+  this.gain = context.createGain();
+  this.gain.gain.value = 0.5;
+  this.gain.connect(context.destination);
+
   repetitions = repetitions === undefined ? 1 : repetitions;
   var time = startTime + this.delay * wholeNote;
   var loop = this.loop;    // note: this is the TRANSFORMED loop
@@ -291,6 +302,11 @@ Voice.prototype.getData = function() {
     return out;
   });
 };
+function silenceVoices() {
+  for(var i=0,l=Voice.prototype.voices.length;i<l;++i) {
+    Voice.prototype.voices[i].adjustGain(0);
+  }
+}
 
 
 
