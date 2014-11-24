@@ -48,8 +48,6 @@ The second both reverses *and* inverts them, combining all of the techniques we�
 
 These transformations are somewhat harder to see, but still follow the same patterns as before.
 
-The final transition is in tempo… [find canon]
-
 Combining these forms together CONTEXT CONTEXT CONTEXT WRAP
 
 —

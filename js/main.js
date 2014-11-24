@@ -50,7 +50,7 @@ var NOTE_STRINGS = NOTES.map(function(n) { return n.join(''); });
 // it can take note, octave, duration, position
 // or it can take number, duration, position
 // or it can take an array of the form:
-//            [note, octave, duration, position]
+//           [note, octave, duration, position]
 function Note(note, octave, duration, position) {
   var number;
   if(note instanceof Array) {
@@ -94,8 +94,10 @@ Note.prototype.getNote = function(number) {
   request.responseType = 'arraybuffer';
 
   request.onload = function() {
+    console.log('note request returned for', self.note + self.octave.toString(), request.response);
     context.decodeAudioData(request.response, function(buffer) {
       self.buffer = self.buffers[number] = buffer;
+      console.log('got buffer for', self.note + self.octave.toString());
       dfd.resolve(buffer);
     }, function() {
       dfd.reject();
