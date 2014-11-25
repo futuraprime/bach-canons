@@ -33,18 +33,24 @@ function noteToString(note) {
 // perfect. But it should generally work in our case.
 function dynamicWhen(promises) {
   var dfd = $.Deferred();
-  var when = $.when.apply(this, promises);
-  when.then(function() {
-    dfd.resolve();
-  });
 
-  promises.push = function() {
-    Array.prototype.push.apply(promises, arguments);
-    when = $.when.apply(this, promises);
+  // we know the load will take more than 100ms, so we'll give it
+  // a moment to get going...
+  // yes, this is hacky.
+  setTimeout(function() {
+    var when = $.when.apply(this, promises);
     when.then(function() {
       dfd.resolve();
     });
-  };
+
+    promises.push = function() {
+      Array.prototype.push.apply(promises, arguments);
+      when = $.when.apply(this, promises);
+      when.then(function() {
+        dfd.resolve();
+      });
+    };
+  }, 100);
 
   return dfd.promise();
 }
@@ -108,6 +114,8 @@ function Note(note, octave, duration, position) {
   }
 }
 Note.prototype.buffers = [];
+Note.prototype.promises = [];
+Note.prototype.when = null;
 Note.prototype.getNote = function(number) {
   var dfd = $.Deferred();
   var self = this;
@@ -127,6 +135,11 @@ Note.prototype.getNote = function(number) {
       dfd.reject();
     });
   };
+
+  Note.prototype.promises.push(dfd.promise());
+  if(!Note.prototype.when) {
+    Note.prototype.when = dynamicWhen(Note.prototype.promises);
+  }
 
   request.send();
   return dfd.promise();
@@ -561,7 +574,6 @@ function updateDisplay(canonName) {
     .attr('height', yScale(38) - yScale(39));
 }
 
-
 var stateMachine = new machina.Fsm({
   initialize : function() {
     var self = this;
@@ -577,10 +589,16 @@ var stateMachine = new machina.Fsm({
   initialState : 'loading',
   states : {
     'loading' : {
-
+      _onEnter : function() {
+        var self = this;
+        Note.prototype.when.then(function() {
+          self.transition('theme');
+        });
+      }
     },
     'theme' : {
       _onEnter : function() {
+        console.log('%cswitching to theme', 'font-size:40px;color:red;');
         updateDisplay();
       },
       play : function() {
