@@ -88,7 +88,7 @@ Note.prototype.buffers = [];
 Note.prototype.getNote = function(number) {
   var dfd = $.Deferred();
   var self = this;
-  var url = '../keys/piano-ff-0' + (number < 10 ? '0' : '') + number.toString() + '.wav';
+  var url = './keys/piano-ff-0' + (number < 10 ? '0' : '') + number.toString() + '.wav';
   var request = new XMLHttpRequest();
   request.open('GET', url, true);
   request.responseType = 'arraybuffer';
