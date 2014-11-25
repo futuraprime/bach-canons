@@ -1,0 +1,46 @@
+c_WQXRblue = #26ACE2;
+c_WQXRdark = #0673BA;
+
+body {
+}
+
+.toggle, .button {
+  display: inline-block;
+  text-decoration: none;
+  padding: 3px 5px;
+  color: black;
+  border: 1px solid #ccc;
+  
+  &:hover {
+    background-color: #ddd;
+  }
+  &:active {
+    background-color: c_WQXRblue;
+  }
+}
+
+.button {
+}
+
+.toggle {
+  border-right-width: 0;
+  border-radius: none;
+  
+  &.selected {
+    background-color: c_WQXRdark;
+    border-color: c_WQXRdark;
+    color: white;
+    
+    &:hover, &:active {
+      background-color: c_WQXRdark;
+    }
+  }
+  
+  &:first-child {
+    border-radius: 4px 0 0 4px;
+  }
+  &:last-child {
+    border-radius: 0 4px 4px 0;
+    border-right-width: 1px;
+  }
+}

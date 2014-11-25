@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Walther</title>
+  <script src="deps/jquery/dist/jquery.js"></script>
+  <script src="deps/lodash/dist/lodash.js"></script>
+  <script src="deps/machina/lib/machina.js"></script>
+  <script src="deps/d3/d3.js"></script>
+  <link rel="stylesheet" href="css/iframe.css">
+</head>
+<body>
+  <div class="states">
+    <span>
+      <a href="#" class="toggle state-change" state="theme">Theme</a><a href="#" class="toggle state-change" state="canon">Canon Solution</a>
+    </span>
+    <a href="#" class="button " id="play" class="play">Play</a>
+  </div>
+  <div id="loading">Loading sounds...</div>
+  <svg id="interactive"></svg>
+  <script type="text/javascript" src="js/core.js"></script>
+  <script>
+BWV1074.addCanon('walther', [
+  ['G', new Transform().shiftByTones( 4).fn(), 0  ,   blue],
+  ['C',                                  null, 0.5,    red],
+  ['A', new Transform().shiftByTones(-2).fn(), 1  , yellow],
+  ['D', new Transform().shiftByTones(-6).fn(), 1.5,  green]
+]);
+
+var stateMachine = new machina.Fsm({
+  initialize : function() {
+    var self = this;
+    var playButton = document.getElementById('play');
+    playButton.addEventListener('click', function(evt) {
+      evt.preventDefault();
+      self.handle('play');
+    });
+    $('.states').on('click', '.state-change', function(evt) {
+      evt.preventDefault();
+      self.transition(this.getAttribute('state'));
+      return false;
+    });
+  },
+  initialState : 'loading',
+  states : {
+    'loading' : {
+      _onEnter : function() {
+        var self = this;
+        Note.prototype.when.then(function() {
+          self.transition('theme');
+        });
+      },
+      _onExit : function() {
+        document.getElementById('loading').remove();
+      }
+    },
+    'theme' : {
+      _onEnter : function() {
+        $('.state-change').removeClass('selected')
+          .filter('[state=theme]').addClass('selected');
+        updateDisplay();
+      },
+      play : function() {
+        BWV1074.play();
+      }
+    },
+    'canon' : {
+      _onEnter : function() {
+        $('.state-change').removeClass('selected')
+          .filter('[state=canon]').addClass('selected');
+        updateDisplay('walther');
+      },
+      play : function() {
+        BWV1074.play('walther', 3);
+      }
+    }
+  }
+});
+
+  </script>
+</body>
+</html>

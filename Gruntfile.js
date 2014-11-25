@@ -51,7 +51,8 @@ module.exports = function(grunt) {
           // maybe later?
         },
         files : {
-          'css/style.css' : 'stylus/style.styl'
+          'css/style.css' : 'stylus/style.styl',
+          'css/iframe.css' : 'stylus/iframe.styl'
         }
       }
     },
