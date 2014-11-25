@@ -396,8 +396,18 @@ BWV1074.addCanon('marpurg', [
     ], 1.5, null, green)]
 ]);
 BWV1074.addCanon('mattheson', [
-  // oh this is going to be fun to transcribe...
-  // but in principle those flats are still an even transformation right?
+  ['F', new Voice([
+    [F, 3, 0.5], [C, 3, 1.0], [Eb, 3, 0.5], [Db, 3, 1], [F, 3, 0.5], [Eb, 3, 0.5], [G, 3, 0.75], [Ab, 3, 0.125], [G, 3, 0.125]
+    ], 0, null, blue)],
+  ['C', new Voice([
+    [C, 4, 0.5], [G, 3, 1.0], [Bb, 3, 0.5], [Ab, 3, 1], [C, 4, 0.5], [Bb, 3, 0.5], [Db, 4, 0.75], [Eb, 4, 0.125], [Db, 4, 0.125]
+    ], 0.5, null, red)],
+  ['E', new Voice([
+    [E, 4, 0.5], [Bb, 3, 1.0], [Db, 4, 0.5], [C, 4, 1], [Eb, 4, 0.5], [Db, 4, 0.5], [F, 4, 0.75], [G, 4, 0.125], [F, 4, 0.125]
+    ], 1, null, yellow)],
+  ['B', new Voice([
+    [B, 4, 0.5], [F, 4, 1.0], [Ab, 4, 0.5], [G, 4, 1], [Bb, 4, 0.5], [Ab, 4, 0.5], [C, 5, 0.75], [Db, 5, 0.125], [C, 5, 0.125]
+    ], 1.5, null, green)]
 ]);
 
 
@@ -535,6 +545,14 @@ var stateMachine = new machina.Fsm({
       },
       play : function() {
         BWV1074.play('marpurg', 3);
+      }
+    },
+    'mattheson' : {
+      _onEnter : function () {
+        updateDisplay('mattheson');
+      },
+      play : function() {
+        BWV1074.play('mattheson', 3);
       }
     }
   }
