@@ -26,6 +26,29 @@ function noteToString(note) {
   return _.invert(NOTE_IDS)[note];
 }
 
+// this is a function to let you wait for a dynamic list of promises
+// but does NOT return the results of them to you in any fashion
+// this still has the possibility of resolving early, if all of the
+// async calls known to it wrap up before more are added. So not
+// perfect. But it should generally work in our case.
+function dynamicWhen(promises) {
+  var dfd = $.Deferred();
+  var when = $.when.apply(this, promises);
+  when.then(function() {
+    dfd.resolve();
+  });
+
+  promises.push = function() {
+    Array.prototype.push.apply(promises, arguments);
+    when = $.when.apply(this, promises);
+    when.then(function() {
+      dfd.resolve();
+    });
+  };
+
+  return dfd.promise();
+}
+
 var CHROMATIC = [C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B];
 var DIATONIC  = [C, D, E, F, G, A, B];
 
@@ -236,7 +259,8 @@ Canon.prototype.getData = function() {
 // voices all belong to a canon, and have a transform function
 // applied to them, as well as a delay to account for when they
 // come in
-function Voice(canon, delay, transform, color) {
+function Voice(canon, delay, transform, color, options) {
+  this.options = options || {};
   if(canon.hasOwnProperty('loop')) {
     this._loop = canon.loop;
   } else {
@@ -297,11 +321,12 @@ Voice.prototype.getData = function() {
   // this will eventually (probably) take a range and
   // output something more complicated than the loop
   var delay = this.delay || 0;
-  return this.loop.map(function (note) {
+  var dataLoop = this.loop.map(function (note) {
     var out = note.getData(delay);
     out[3] = self;
     return out;
   });
+  return this.options.reverse ? dataLoop.reverse() : dataLoop;
 };
 function silenceVoices() {
   for(var i=0,l=Voice.prototype.voices.length;i<l;++i) {
@@ -402,12 +427,40 @@ BWV1074.addCanon('mattheson', [
   ['C', new Voice([
     [C, 4, 0.5], [G, 3, 1.0], [Bb, 3, 0.5], [Ab, 3, 1], [C, 4, 0.5], [Bb, 3, 0.5], [Db, 4, 0.75], [Eb, 4, 0.125], [Db, 4, 0.125]
     ], 0.5, null, red)],
-  ['E', new Voice([
-    [E, 4, 0.5], [Bb, 3, 1.0], [Db, 4, 0.5], [C, 4, 1], [Eb, 4, 0.5], [Db, 4, 0.5], [F, 4, 0.75], [G, 4, 0.125], [F, 4, 0.125]
+  ['Eb', new Voice([
+    [Eb, 4, 0.5], [Bb, 3, 1.0], [Db, 4, 0.5], [C, 4, 1], [Eb, 4, 0.5], [Db, 4, 0.5], [F, 4, 0.75], [G, 4, 0.125], [F, 4, 0.125]
     ], 1, null, yellow)],
-  ['B', new Voice([
-    [B, 4, 0.5], [F, 4, 1.0], [Ab, 4, 0.5], [G, 4, 1], [Bb, 4, 0.5], [Ab, 4, 0.5], [C, 5, 0.75], [Db, 5, 0.125], [C, 5, 0.125]
+  ['Bb', new Voice([
+    [Bb, 4, 0.5], [F, 4, 1.0], [Ab, 4, 0.5], [G, 4, 1], [Bb, 4, 0.5], [Ab, 4, 0.5], [C, 5, 0.75], [Db, 5, 0.125], [C, 5, 0.125]
     ], 1.5, null, green)]
+]);
+BWV1074.addCanon('retrograde', [
+  ['C', new Voice([
+    [C, 3, 0.125], [Bb, 2, 0.125], [C, 3, 0.75], [Eb, 3, 0.5], [Db, 3, 0.5], [F, 3, 1], [Eb, 3, 0.5], [G, 3, 1], [Db, 3, 1]
+    ], 0, null, blue, { reverse : true })],
+  ['G', new Voice([
+    [G, 3, 0.125], [F, 3, 0.125], [G, 3, 0.75], [Bb, 3, 0.5], [Ab, 3, 0.5], [Db, 4, 1], [Bb, 3, 0.5], [Db, 4, 1], [Ab, 3, 1]
+    ], 0.5, null, red, { reverse : true })],
+  ['Bb', new Voice([
+    [Bb, 3, 0.125], [Ab, 3, 0.125], [Bb, 3, 0.75], [Db, 4, 0.5], [C, 4, 0.5], [Eb, 4, 1], [Db, 4, 0.5], [F, 4, 1], [C, 4, 1]
+    ], 1, null, yellow, { reverse : true })],
+  ['F', new Voice([
+    [F, 4, 0.125], [Eb, 4, 0.125], [F, 4, 0.75], [Ab, 4, 0.5], [G, 4, 0.5], [Bb, 4, 1], [Ab, 4, 0.5], [C, 5, 1], [G, 4, 1]
+    ], 1.5, null, green, { reverse : true })]
+]);
+BWV1074.addCanon('retroinvert', [
+  ['C', new Voice([
+    [C, 5, 0.125], [D, 5, 0.125], [C, 5, 0.75], [A, 4, 0.5], [B, 4, 0.5], [G, 4, 1], [A, 4, 0.5], [F, 4, 1], [B, 4, 1]
+    ], 0, null, blue, { reverse : true })],
+  ['F', new Voice([
+    [F, 4, 0.125], [G, 4, 0.125], [F, 4, 0.75], [D, 4, 0.5], [E, 4, 0.5], [C, 4, 1], [D, 4, 0.5], [B, 3, 1], [E, 4, 1]
+    ], 0.5, null, red, { reverse : true })],
+  ['D', new Voice([
+    [D, 4, 0.125], [E, 4, 0.125], [D, 4, 0.75], [B, 3, 0.5], [C, 4, 0.5], [A, 3, 1], [B, 3, 0.5], [G, 3, 1], [B, 3, 1]
+    ], 1, null, yellow, { reverse : true })],
+  ['G', new Voice([
+    [G, 3, 0.125], [A, 3, 0.125], [G, 3, 0.75], [E, 3, 0.5], [F, 3, 0.5], [D, 3, 1], [E, 3, 0.5], [C, 3, 1], [F, 3, 1]
+    ], 1.5, null, green, { reverse : true })]
 ]);
 
 
@@ -521,8 +574,11 @@ var stateMachine = new machina.Fsm({
       return false;
     });
   },
-  initialState : 'theme',
+  initialState : 'loading',
   states : {
+    'loading' : {
+
+    },
     'theme' : {
       _onEnter : function() {
         updateDisplay();
@@ -553,6 +609,22 @@ var stateMachine = new machina.Fsm({
       },
       play : function() {
         BWV1074.play('mattheson', 3);
+      }
+    },
+    'retrograde' : {
+      _onEnter : function() {
+        updateDisplay('retrograde');
+      },
+      play : function() {
+        BWV1074.play('retrograde', 3);
+      }
+    },
+    'retroinvert' : {
+      _onEnter : function() {
+        updateDisplay('retroinvert');
+      },
+      play : function() {
+        BWV1074.play('retroinvert', 3);
       }
     }
   }
