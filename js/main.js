@@ -123,14 +123,14 @@ Note.prototype.play = function(startTime, gain) {
 
 
 
-function convertToNotes(noteArray) {
+function convertToNotes(noteArray, reverse) {
   var elapsedTime = 0;
   var outArray = [];
   for(var i=0,l=noteArray.length;i<l;++i) {
     outArray[i] = new Note(noteArray[i][0], noteArray[i][1], noteArray[i][2], elapsedTime);
     elapsedTime += noteArray[i][2];
   }
-  return outArray;
+  return reverse ? outArray : outArray.reverse();
 }
 
 
@@ -236,12 +236,13 @@ Canon.prototype.getData = function() {
 // voices all belong to a canon, and have a transform function
 // applied to them, as well as a delay to account for when they
 // come in
-function Voice(canon, delay, transform, color) {
+function Voice(canon, delay, transform, color, options) {
+  options = options || {};
   if(canon.hasOwnProperty('loop')) {
     this._loop = canon.loop;
   } else {
     // we assume the canon presented is a notearray.
-    this._loop = convertToNotes(canon);
+    this._loop = convertToNotes(canon, options.reverse);
   }
   this.setTransform(transform);
   this.delay = delay === undefined ? 0 : delay;
@@ -402,12 +403,26 @@ BWV1074.addCanon('mattheson', [
   ['C', new Voice([
     [C, 4, 0.5], [G, 3, 1.0], [Bb, 3, 0.5], [Ab, 3, 1], [C, 4, 0.5], [Bb, 3, 0.5], [Db, 4, 0.75], [Eb, 4, 0.125], [Db, 4, 0.125]
     ], 0.5, null, red)],
-  ['E', new Voice([
-    [E, 4, 0.5], [Bb, 3, 1.0], [Db, 4, 0.5], [C, 4, 1], [Eb, 4, 0.5], [Db, 4, 0.5], [F, 4, 0.75], [G, 4, 0.125], [F, 4, 0.125]
+  ['Eb', new Voice([
+    [Eb, 4, 0.5], [Bb, 3, 1.0], [Db, 4, 0.5], [C, 4, 1], [Eb, 4, 0.5], [Db, 4, 0.5], [F, 4, 0.75], [G, 4, 0.125], [F, 4, 0.125]
     ], 1, null, yellow)],
-  ['B', new Voice([
-    [B, 4, 0.5], [F, 4, 1.0], [Ab, 4, 0.5], [G, 4, 1], [Bb, 4, 0.5], [Ab, 4, 0.5], [C, 5, 0.75], [Db, 5, 0.125], [C, 5, 0.125]
+  ['Bb', new Voice([
+    [Bb, 4, 0.5], [F, 4, 1.0], [Ab, 4, 0.5], [G, 4, 1], [Bb, 4, 0.5], [Ab, 4, 0.5], [C, 5, 0.75], [Db, 5, 0.125], [C, 5, 0.125]
     ], 1.5, null, green)]
+]);
+BWV1074.addCanon('retrograde', [
+  ['C', new Voice([
+    [C, 3, 0.125], [Bb, 2, 0.125], [C, 3, 0.75], [Eb, 3, 0.5], [Db, 3, 0.5], [F, 3, 1], [Eb, 3, 0.5], [G, 3, 1], [Db, 3, 1]
+    ], 0, null, blue, { reverse : true })],
+  ['G', new Voice([
+    [G, 3, 0.125], [F, 3, 0.125], [G, 3, 0.75], [Bb, 3, 0.5], [Ab, 3, 0.5], [Db, 4, 1], [Bb, 3, 0.5], [Db, 4, 1], [Ab, 3, 1]
+    ], 0.5, null, red, { reverse : true })],
+  ['Bb', new Voice([
+    [Bb, 3, 0.125], [Ab, 3, 0.125], [Bb, 3, 0.75], [Db, 4, 0.5], [C, 4, 0.5], [Eb, 4, 1], [Db, 4, 0.5], [F, 4, 1], [C, 4, 1]
+    ], 1, null, yellow, { reverse : true })],
+  ['F', new Voice([
+    [F, 4, 0.125], [Eb, 4, 0.125], [F, 4, 0.75], [Ab, 4, 0.5], [G, 4, 0.5], [Bb, 4, 1], [Ab, 4, 0.5], [C, 5, 1], [G, 4, 1]
+    ], 1.5, null, green, { reverse : true })]
 ]);
 
 
@@ -553,6 +568,14 @@ var stateMachine = new machina.Fsm({
       },
       play : function() {
         BWV1074.play('mattheson', 3);
+      }
+    },
+    'retrograde' : {
+      _onEnter : function() {
+        updateDisplay('retrograde');
+      },
+      play : function() {
+        BWV1074.play('retrograde', 3);
       }
     }
   }
