@@ -125,13 +125,10 @@ Note.prototype.getNote = function(number) {
   request.responseType = 'arraybuffer';
 
   request.onload = function() {
-    console.log('note request returned for', self.note + self.octave.toString(), request.response);
     context.decodeAudioData(request.response, function(buffer) {
       self.buffer = self.buffers[number] = buffer;
-      console.log('got buffer for', self.note + self.octave.toString());
       dfd.resolve(buffer);
     }, function(err) {
-      console.log('no joy with buffer for', self.note + self.octave.toString(), err);
       dfd.reject();
     });
   };
@@ -598,7 +595,6 @@ var stateMachine = new machina.Fsm({
     },
     'theme' : {
       _onEnter : function() {
-        console.log('%cswitching to theme', 'font-size:40px;color:red;');
         updateDisplay();
       },
       play : function() {
