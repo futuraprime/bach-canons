@@ -21,67 +21,14 @@
   <svg id="interactive"></svg>
   <script type="text/javascript" src="js/core.js"></script>
   <script>
+var frameId = 'walther';
+
 BWV1074.addCanon('walther', [
   ['G', new Transform().shiftByTones( 4).fn(), 0  ,   blue],
   ['C',                                  null, 0.5,    red],
   ['A', new Transform().shiftByTones(-2).fn(), 1  , yellow],
   ['D', new Transform().shiftByTones(-6).fn(), 1.5,  green]
 ]);
-
-var stateMachine = new machina.Fsm({
-  initialize : function() {
-    var self = this;
-    var playButton = document.getElementById('play');
-    playButton.addEventListener('click', function(evt) {
-      evt.preventDefault();
-      self.handle('play');
-    });
-    $('.states').on('click', '.state-change', function(evt) {
-      evt.preventDefault();
-      self.transition(this.getAttribute('state'));
-      return false;
-    });
-  },
-  initialState : 'loading',
-  states : {
-    'loading' : {
-      _onEnter : function() {
-        var self = this;
-        Note.prototype.when.then(function() {
-          // I don't know why we need this, but it seems to be helpful
-          setTimeout(function() {
-            self.transition('theme')
-          }, 500);
-        });
-      },
-      _onExit : function() {
-        document.getElementById('loading').remove();
-      }
-    },
-    'theme' : {
-      _onEnter : function() {
-        console.log('switching to theme');
-        $('.state-change').removeClass('selected')
-          .filter('[state=theme]').addClass('selected');
-        updateDisplay();
-      },
-      play : function() {
-        BWV1074.play();
-      }
-    },
-    'canon' : {
-      _onEnter : function() {
-        $('.state-change').removeClass('selected')
-          .filter('[state=canon]').addClass('selected');
-        updateDisplay('walther');
-      },
-      play : function() {
-        BWV1074.play('walther', 3);
-      }
-    }
-  }
-});
-
   </script>
 </body>
 </html>

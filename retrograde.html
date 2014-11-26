@@ -21,6 +21,8 @@
   <svg id="interactive"></svg>
   <script type="text/javascript" src="js/core.js"></script>
   <script>
+var frameId = 'retrograde';
+
 BWV1074.addCanon('retrograde', [
   ['C', new Voice([
     [C, 3, 0.125], [Bb, 2, 0.125], [C, 3, 0.75], [Eb, 3, 0.5], [Db, 3, 0.5], [F, 3, 1], [Eb, 3, 0.5], [G, 3, 1], [Db, 3, 1]
@@ -35,61 +37,6 @@ BWV1074.addCanon('retrograde', [
     [F, 4, 0.125], [Eb, 4, 0.125], [F, 4, 0.75], [Ab, 4, 0.5], [G, 4, 0.5], [Bb, 4, 1], [Ab, 4, 0.5], [C, 5, 1], [G, 4, 1]
     ], 1.5, null, green, { reverse : true })]
 ]);
-
-var stateMachine = new machina.Fsm({
-  initialize : function() {
-    var self = this;
-    var playButton = document.getElementById('play');
-    playButton.addEventListener('click', function(evt) {
-      evt.preventDefault();
-      self.handle('play');
-    });
-    $('.states').on('click', '.state-change', function(evt) {
-      evt.preventDefault();
-      self.transition(this.getAttribute('state'));
-      return false;
-    });
-  },
-  initialState : 'loading',
-  states : {
-    'loading' : {
-      _onEnter : function() {
-        var self = this;
-        Note.prototype.when.then(function() {
-          // I don't know why we need this, but it seems to be helpful
-          setTimeout(function() {
-            self.transition('theme')
-          }, 500);
-        });
-      },
-      _onExit : function() {
-        document.getElementById('loading').remove();
-      }
-    },
-    'theme' : {
-      _onEnter : function() {
-        console.log('switching to theme');
-        $('.state-change').removeClass('selected')
-          .filter('[state=theme]').addClass('selected');
-        updateDisplay();
-      },
-      play : function() {
-        BWV1074.play();
-      }
-    },
-    'canon' : {
-      _onEnter : function() {
-        $('.state-change').removeClass('selected')
-          .filter('[state=canon]').addClass('selected');
-        updateDisplay('retrograde');
-      },
-      play : function() {
-        BWV1074.play('retrograde', 3);
-      }
-    }
-  }
-});
-
   </script>
 </body>
 </html>

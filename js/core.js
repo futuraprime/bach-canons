@@ -493,3 +493,57 @@ function updateDisplay(canonName) {
     .attr('y', function(d) { return yScale(d[0]); })
     .attr('height', yScale(38) - yScale(39));
 }
+
+var stateMachine = new machina.Fsm({
+  initialize : function() {
+    var self = this;
+    var playButton = document.getElementById('play');
+    playButton.addEventListener('click', function(evt) {
+      evt.preventDefault();
+      self.handle('play');
+    });
+    $('.states').on('click', '.state-change', function(evt) {
+      evt.preventDefault();
+      self.transition(this.getAttribute('state'));
+      return false;
+    });
+  },
+  initialState : 'loading',
+  states : {
+    'loading' : {
+      _onEnter : function() {
+        var self = this;
+        Note.prototype.when.then(function() {
+          // I don't know why we need this, but it seems to be helpful
+          setTimeout(function() {
+            self.transition('theme');
+          }, 500);
+        });
+      },
+      _onExit : function() {
+        document.getElementById('loading').remove();
+      }
+    },
+    'theme' : {
+      _onEnter : function() {
+        console.log('switching to theme');
+        $('.state-change').removeClass('selected')
+          .filter('[state=theme]').addClass('selected');
+        updateDisplay();
+      },
+      play : function() {
+        BWV1074.play();
+      }
+    },
+    'canon' : {
+      _onEnter : function() {
+        $('.state-change').removeClass('selected')
+          .filter('[state=canon]').addClass('selected');
+        updateDisplay(window.frameId);
+      },
+      play : function() {
+        BWV1074.play(window.frameId, 3);
+      }
+    }
+  }
+});
