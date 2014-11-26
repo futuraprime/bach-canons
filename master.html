@@ -1,23 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test iframes</title>
-    <style type="text/css">
-    iframe {
-        display: block;
-    }
-    </style>
+  <title>Test iframes</title>
+  <style type="text/css">
+  iframe {
+    display: block;
+  }
+  </style>
 </head>
 <body>
-    Walther
-    <iframe scrolling="no" width="620" height="450" src="walther.html" frameborder="0"></iframe>
-    Marpurg
-    <iframe scrolling="no" width="620" height="450" src="marpurg.html" frameborder="0"></iframe>
-    Mattheson
-    <iframe scrolling="no" width="620" height="450" src="mattheson.html" frameborder="0"></iframe>
-    Retrograde
-    <iframe scrolling="no" width="620" height="450" src="retrograde.html" frameborder="0"></iframe>
-    Retro-Inversion
-    <iframe scrolling="no" width="620" height="450" src="retroinvert.html" frameborder="0"></iframe>
+  Walther
+  <iframe scrolling="no" width="620" height="450" src="walther.html" frameborder="0"></iframe>
+  Marpurg
+  <iframe scrolling="no" width="620" height="450" src="marpurg.html" frameborder="0"></iframe>
+  Mattheson
+  <iframe scrolling="no" width="620" height="450" src="mattheson.html" frameborder="0"></iframe>
+  Retrograde
+  <iframe scrolling="no" width="620" height="450" src="retrograde.html" frameborder="0"></iframe>
+  Retro-Inversion
+  <iframe scrolling="no" width="620" height="450" src="retroinvert.html" frameborder="0"></iframe>
+  <script type="text/javascript">
+    // IE?!
+    var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+    var eventer = window[eventMethod];
+    var messageEvent = eventMethod === "attachEvent" ? 'onmessage' : 'message';
+
+    var iframes = document.getElementsByTagName('iframe');
+
+    var eventHandlers = {
+      silence : function(frameId) {
+        for(var i=0,l=iframes.length;i<l;++i) {
+          // TODO: REMOVE *
+          iframes[i].contentWindow.postMessage('silence:'+frameId, '*');
+        }
+      }
+    };
+
+    eventer(messageEvent, function(evt) {
+      // console.log('message recieved', evt.data);
+      var message = evt.data.split(':');
+      var fn = message.shift();
+      eventHandlers[fn].apply(this, message);
+    });
+  </script>
 </body>
 </html>

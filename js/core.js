@@ -339,9 +339,16 @@ Voice.prototype.getData = function() {
   });
   return this.options.reverse ? dataLoop.reverse() : dataLoop;
 };
-function silenceVoices() {
+function silenceVoices(frameId) {
+  // don't listen to frame events from your own frame...
+  if(frameId === window.frameId) { return; }
   for(var i=0,l=Voice.prototype.voices.length;i<l;++i) {
     Voice.prototype.voices[i].adjustGain(0);
+  }
+  // no frameId means it came from this frame
+  if(!frameId) {
+    // TODO: REMOVE *
+    window.parent.postMessage('silence:'+window.frameId, '*');
   }
 }
 
@@ -526,7 +533,6 @@ var stateMachine = new machina.Fsm({
     },
     'theme' : {
       _onEnter : function() {
-        console.log('switching to theme');
         $('.state-change').removeClass('selected')
           .filter('[state=theme]').addClass('selected');
         updateDisplay();
@@ -547,3 +553,21 @@ var stateMachine = new machina.Fsm({
     }
   }
 });
+
+
+var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+var eventer = window[eventMethod];
+var messageEvent = eventMethod === "attachEvent" ? 'onmessage' : 'message';
+
+var eventHandlers = {
+  silence : silenceVoices
+};
+
+eventer(messageEvent, function(evt) {
+  // console.log('message recieved in '+window.frameId, evt.data);
+  var message = evt.data.split(':');
+  var fn = message.shift();
+  eventHandlers[fn].apply(this, message);
+});
+
+
