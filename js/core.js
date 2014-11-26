@@ -1,7 +1,4 @@
-// prototype code for the bach canons work
-var AudioContext = window.AudioContext || window.webkitAudioContext;
-var context = new AudioContext();
-
+// CLASS DEFINITIONS
 var wholeNote = 1;
 
 // these are the number of the key of these notes
@@ -400,25 +397,101 @@ Transform.prototype.fn = function() {
 
 
 
-var BWV1074_notes = ([
-  [C, 4, 0.5  , 0.0   ],
-  [F, 4, 1    , 0.5   ],
-  [D, 4, 0.5  , 1.5   ],
-  [E, 4, 1    , 2.0   ],
-  [C, 4, 0.5  , 3.0   ],
-  [D, 4, 0.5  , 3.5   ],
-  [B, 3, 0.75 , 4.0   ],
-  [A, 3, 0.125, 4.75  ],
-  [B, 3, 0.125, 4.875 ]
-]);
+// ====================
+// STATE MACHINE
+//
+// aka the business end
+// ====================
+var stateMachine = new machina.Fsm({
+  initialize : function() {
+    var self = this;
+    var AudioContext = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContext) {
+      return self.transition('unsupported');
+    }
+    var context = window.context = new AudioContext();
 
+    this.BWV1074_notes = ([
+      [C, 4, 0.5  , 0.0   ],
+      [F, 4, 1    , 0.5   ],
+      [D, 4, 0.5  , 1.5   ],
+      [E, 4, 1    , 2.0   ],
+      [C, 4, 0.5  , 3.0   ],
+      [D, 4, 0.5  , 3.5   ],
+      [B, 3, 0.75 , 4.0   ],
+      [A, 3, 0.125, 4.75  ],
+      [B, 3, 0.125, 4.875 ]
+    ]);
+    this.BWV1074 = new Theme(this.BWV1074_notes);
+
+    var playButton = document.getElementById('play');
+    playButton.addEventListener('click', function(evt) {
+      evt.preventDefault();
+      self.handle('play');
+    });
+    $('.states').on('click', '.state-change', function(evt) {
+      evt.preventDefault();
+      self.transition(this.getAttribute('state'));
+      return false;
+    });
+  },
+  addCanon : function() {
+    var args = Array.prototype.slice.call(arguments);
+    var theme = args.shift();
+    this[theme].addCanon.apply(this[theme], args);
+  },
+  initialState : 'loading',
+  states : {
+    'loading' : {
+      _onEnter : function() {
+        var self = this;
+        Note.prototype.when.then(function() {
+          // I don't know why we need this, but it seems to be helpful
+          setTimeout(function() {
+            document.getElementById('loading').remove();
+            self.transition('theme');
+          }, 500);
+        });
+      },
+      _onExit : function() {
+      }
+    },
+    'unsupported' : {
+      _onEnter : function() {
+        document.getElementById('loading').innerHTML = "We're sorry, but your browser does not support this interactive.";
+      }
+    },
+    'theme' : {
+      _onEnter : function() {
+        $('.state-change').removeClass('selected')
+          .filter('[state=theme]').addClass('selected');
+        updateDisplay();
+      },
+      play : function() {
+        this.BWV1074.play();
+      }
+    },
+    'canon' : {
+      _onEnter : function() {
+        $('.state-change').removeClass('selected')
+          .filter('[state=canon]').addClass('selected');
+        updateDisplay(window.frameId);
+      },
+      play : function() {
+        this.BWV1074.play(window.frameId, 3);
+      }
+    }
+  }
+});
+
+
+
+
+// the visuals
 var blue   = '#2368A0';
 var yellow = '#8A6318';
 var red    = '#B13631';
 var green  = '#337331';
-
-var BWV1074 = new Theme(BWV1074_notes);
-
 
 
 // visual bits
@@ -450,9 +523,9 @@ function updateDisplay(canonName) {
 
   var notes = interactive.selectAll('.note');
 
-  var noteData = notes.data(BWV1074.getData(canonName));
+  var noteData = notes.data(stateMachine.BWV1074.getData(canonName));
 
-  var themeData = BWV1074.getData();
+  var themeData = stateMachine.BWV1074.getData();
   var tL = themeData.length;
 
   // this should actually be a no-op, since we already removed all
@@ -500,59 +573,6 @@ function updateDisplay(canonName) {
     .attr('y', function(d) { return yScale(d[0]); })
     .attr('height', yScale(38) - yScale(39));
 }
-
-var stateMachine = new machina.Fsm({
-  initialize : function() {
-    var self = this;
-    var playButton = document.getElementById('play');
-    playButton.addEventListener('click', function(evt) {
-      evt.preventDefault();
-      self.handle('play');
-    });
-    $('.states').on('click', '.state-change', function(evt) {
-      evt.preventDefault();
-      self.transition(this.getAttribute('state'));
-      return false;
-    });
-  },
-  initialState : 'loading',
-  states : {
-    'loading' : {
-      _onEnter : function() {
-        var self = this;
-        Note.prototype.when.then(function() {
-          // I don't know why we need this, but it seems to be helpful
-          setTimeout(function() {
-            self.transition('theme');
-          }, 500);
-        });
-      },
-      _onExit : function() {
-        document.getElementById('loading').remove();
-      }
-    },
-    'theme' : {
-      _onEnter : function() {
-        $('.state-change').removeClass('selected')
-          .filter('[state=theme]').addClass('selected');
-        updateDisplay();
-      },
-      play : function() {
-        BWV1074.play();
-      }
-    },
-    'canon' : {
-      _onEnter : function() {
-        $('.state-change').removeClass('selected')
-          .filter('[state=canon]').addClass('selected');
-        updateDisplay(window.frameId);
-      },
-      play : function() {
-        BWV1074.play(window.frameId, 3);
-      }
-    }
-  }
-});
 
 
 var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
