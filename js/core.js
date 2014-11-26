@@ -517,7 +517,10 @@ function updateDisplay(canonName) {
     .attr('class', 'removing')
     .transition()
     .duration(100)
-    .style('opacity', '0')
+    .style('opacity', function(d) {
+      if(canonName) { return 0; }
+      return 1;
+    })
     .delay(100)
     .remove();
 
