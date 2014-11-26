@@ -346,6 +346,7 @@ function silenceVoices(frameId) {
   if(!frameId) {
     // TODO: REMOVE *
     window.parent.postMessage('silence:'+window.frameId, '*');
+    stateMachine.showPlay();
   }
 }
 
@@ -424,7 +425,7 @@ var stateMachine = new machina.Fsm({
     ]);
     this.BWV1074 = new Theme(this.BWV1074_notes);
 
-    var playButton = document.getElementById('play');
+    var playButton = this.playButton = document.getElementById('play');
     playButton.addEventListener('click', function(evt) {
       evt.preventDefault();
       self.handle('play');
@@ -434,6 +435,12 @@ var stateMachine = new machina.Fsm({
       self.transition(this.getAttribute('state'));
       return false;
     });
+  },
+  showPlay : function() {
+    this.playButton.style.display = 'block';
+  },
+  hidePlay : function() {
+    this.playButton.style.display = 'none';
   },
   addCanon : function() {
     var args = Array.prototype.slice.call(arguments);
@@ -463,12 +470,18 @@ var stateMachine = new machina.Fsm({
     },
     'theme' : {
       _onEnter : function() {
+        this.showPlay();
         $('.state-change').removeClass('selected')
           .filter('[state=theme]').addClass('selected');
         updateDisplay();
       },
       play : function() {
+        var self = this;
         this.BWV1074.play();
+        this.hidePlay();
+        setTimeout(function() {
+          self.showPlay();
+        }, wholeNote * 6 * 1000);
       },
       stop: function() {
         silenceVoices();
@@ -476,14 +489,20 @@ var stateMachine = new machina.Fsm({
     },
     'canon' : {
       _onEnter : function() {
+        this.showPlay();
         $('.state-change').removeClass('selected')
           .filter('[state=canon]').addClass('selected');
         updateDisplay(window.frameId, true);
       },
       play : function() {
+        var self = this;
         updateDisplay(null, true);
         updateDisplay(window.frameId);
         this.BWV1074.play(window.frameId, 2);
+        this.hidePlay();
+        setTimeout(function() {
+          self.showPlay();
+        }, wholeNote * 12 * 1000);
       },
       stop : function() {
         silenceVoices();

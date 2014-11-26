@@ -40,7 +40,7 @@ The second both reverses *and* inverts them, combining all of the techniques we�
 
 These transformations are somewhat harder to see, but still follow the same patterns as before.
 
-Canons are constructed by simple, clear rules, but they embody great complexity. Bach, and many of his contemporaries, felt their intricate construction reflected the divine harmonies of the universe.
+Canons are constructed by simple, clear rules, but they embody great complexity. Bach, and many of his contemporaries, felt their intricate construction reflected the divine harmonies of the universe, and it’s still possible today to appreciate their logical and mathematical charms.
 
 —
 Sources
