@@ -449,7 +449,7 @@ var stateMachine = new machina.Fsm({
           // I don't know why we need this, but it seems to be helpful
           setTimeout(function() {
             document.getElementById('loading').remove();
-            self.transition('theme');
+            self.transition(window.frameId === 'theme' ? 'theme' : 'canon');
           }, 500);
         });
       },
@@ -469,16 +469,24 @@ var stateMachine = new machina.Fsm({
       },
       play : function() {
         this.BWV1074.play();
+      },
+      stop: function() {
+        silenceVoices();
       }
     },
     'canon' : {
       _onEnter : function() {
         $('.state-change').removeClass('selected')
           .filter('[state=canon]').addClass('selected');
-        updateDisplay(window.frameId);
+        updateDisplay(window.frameId, true);
       },
       play : function() {
-        this.BWV1074.play(window.frameId, 3);
+        updateDisplay(null, true);
+        updateDisplay(window.frameId);
+        this.BWV1074.play(window.frameId, 2);
+      },
+      stop : function() {
+        silenceVoices();
       }
     }
   }
@@ -509,7 +517,7 @@ var yScale = d3.scale.linear()
   .range([380, 20]);
 
 
-function updateDisplay(canonName) {
+function updateDisplay(canonName, instant) {
   // we want all the voices to show up as transformations of the
   // theme, so we're going to cut out the old one...
   interactive.selectAll('.note')
@@ -546,35 +554,47 @@ function updateDisplay(canonName) {
     .attr('height', yScale(38) - yScale(39))
     .style('opacity', 0);
 
-  noteData
-    // ok, now is time for some crazy fancy transitions...
-    // first, we fade in the elements, still in their theme positions
-    .transition().duration(100)
-    .delay(function(d, idx) {
-      return Math.floor(idx/tL) * voiceDelay;
-    })
-    .style('opacity', 1)
+  if(instant) {
+    noteData
+      .style('opacity', 1)
+      .style('fill', function(d) {
+        return d[3].color;
+      })
+      .attr('x', function(d) { return xScale(d[2]); })
+      .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
+      .attr('y', function(d) { return yScale(d[0]); })
+      .attr('height', yScale(38) - yScale(39));
+  } else {
+    noteData
+      // ok, now is time for some crazy fancy transitions...
+      // first, we fade in the elements, still in their theme positions
+      .transition().duration(100)
+      .delay(function(d, idx) {
+        return Math.floor(idx/tL) * voiceDelay;
+      })
+      .style('opacity', 1)
 
 
-    // next, we move them horizontally, including any scaling that happens
-    // in the horizontal direction
-    .transition().duration(250)
-    .delay(function(d, idx) {
-      return 110 + Math.floor(idx/tL) * voiceDelay;
-    })
-    .style('fill', function(d) {
-      return d[3].color;
-    })
-    .attr('x', function(d) { return xScale(d[2]); })
-    .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
+      // next, we move them horizontally, including any scaling that happens
+      // in the horizontal direction
+      .transition().duration(250)
+      .delay(function(d, idx) {
+        return 110 + Math.floor(idx/tL) * voiceDelay;
+      })
+      .style('fill', function(d) {
+        return d[3].color;
+      })
+      .attr('x', function(d) { return xScale(d[2]); })
+      .attr('width', function(d) { return xScale(d[1]) - xScale(0); })
 
 
-    // finally, we move them up or down, and invert them if needed.
-    .transition().duration(250).delay(function(d, idx) {
-      return 370 + Math.floor(idx/tL) * voiceDelay;
-    })
-    .attr('y', function(d) { return yScale(d[0]); })
-    .attr('height', yScale(38) - yScale(39));
+      // finally, we move them up or down, and invert them if needed.
+      .transition().duration(250).delay(function(d, idx) {
+        return 370 + Math.floor(idx/tL) * voiceDelay;
+      })
+      .attr('y', function(d) { return yScale(d[0]); })
+      .attr('height', yScale(38) - yScale(39));
+  }
 }
 
 

@@ -10,7 +10,7 @@ The examples I'll discuss here are from Bach’s "Hudemann" canon (named for its
 
 but from this theme, several different “solutions” to the canon can be formed.
 
-Nearly all canons rely on some amount of delay between the canon’s voices, as in a round. The simplest form beyond this also shifts the theme in pitch. The solution Bach gave to J.S. Walther relies on only these two techniques:
+Nearly all canons rely on some amount of delay between the canon’s voices, as in a round. The simplest form beyond this also shifts the theme in pitch. The solution Bach gave to J.S. Walther relies on only these two techniques (the different colors correspond here to different voices):
 
 [walther]
 
