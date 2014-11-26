@@ -46,7 +46,10 @@ var stateMachine = new machina.Fsm({
       _onEnter : function() {
         var self = this;
         Note.prototype.when.then(function() {
-          self.transition('theme');
+          // I don't know why we need this, but it seems to be helpful
+          setTimeout(function() {
+            self.transition('theme')
+          }, 500);
         });
       },
       _onExit : function() {

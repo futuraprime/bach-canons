@@ -200,6 +200,7 @@ Theme.prototype.getData = function(canonName) {
 Theme.prototype.play = function(canonName, repetitions) {
   if(!this.canons[canonName]) {
     // no canon, play the theme alone
+    silenceVoices(); // stop other currently playing things
     return this.theme.play(context.currentTime + 0.1);
   }
 
